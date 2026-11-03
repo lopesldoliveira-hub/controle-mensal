@@ -55,6 +55,9 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 .salvar{flex:1;padding:14px;border:0;border-radius:6px;background:var(--tinta);color:var(--papel);font-weight:600}
 .cancelar{padding:14px;border:1px solid var(--linha);border-radius:6px;background:none}
 .carregando{opacity:.55;pointer-events:none}
+.previa{font-size:.88rem;color:var(--suave);margin:6px 0 0;font-weight:500}
+.pilhaBotoes{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.perigo{padding:13px;border:1px solid var(--alerta);border-radius:6px;background:none;color:var(--alerta);font-weight:600}
 .linkbtn{background:none;border:0;padding:4px 0;text-decoration:underline;color:inherit;font-size:inherit}
 .conta{display:flex;align-items:center;justify-content:space-between;font-size:.82rem;color:var(--suave);margin:0 0 8px}
 @media (min-width:860px){main{max-width:1000px}.placar{grid-template-columns:repeat(4,1fr)}.kpi:nth-child(n+3){border-top:0}.kpi:nth-child(3){border-left:1px solid var(--linha)}#tela{padding-bottom:20px}.colunas{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}.novo{left:auto;right:calc(50% - 484px);width:260px;margin:0}}
@@ -97,12 +100,46 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
     <label for="repetir">Repetição</label>
     <select id="repetir"><option value="nao">Só esta vez</option><option value="parcelado">Parcelado</option><option value="mensal">Todo mês, por 12 meses</option></select>
     <div id="caixaParcelas" hidden>
-      <label for="parcelas">Número de parcelas (o valor é o total)</label>
+      <label for="parcelas">Número de parcelas</label>
       <input id="parcelas" inputmode="numeric" value="2">
+      <label for="valorModo">O valor digitado é</label>
+      <select id="valorModo"><option value="parcela">De cada parcela</option><option value="total">O total da compra</option></select>
+      <p class="previa" id="previa" role="status"></p>
     </div>
     <p class="erro" id="erroForm" role="alert" hidden></p>
     <div class="fim"><button type="button" class="cancelar" id="cancelar">Cancelar</button><button type="button" class="salvar" id="salvar">Salvar</button></div>
   </form>
+</dialog>
+<dialog id="janelaEditar">
+  <form novalidate>
+    <h3>Editar lançamento</h3>
+    <div id="caixaEscopo">
+      <label for="edEscopo">O que alterar</label>
+      <select id="edEscopo"></select>
+      <p class="previa" id="edAviso"></p>
+    </div>
+    <label for="edValor" id="edRotuloValor">Valor</label>
+    <input id="edValor" inputmode="decimal" autocomplete="off">
+    <label for="edDescricao">Descrição</label>
+    <input id="edDescricao" autocomplete="off" maxlength="120">
+    <label for="edData">Data</label>
+    <input id="edData" type="date">
+    <div id="caixaEdSituacao">
+      <label for="edSituacao">Situação</label>
+      <select id="edSituacao"></select>
+    </div>
+    <p class="erro" id="erroEditar" role="alert" hidden></p>
+    <div class="fim"><button type="button" class="cancelar" id="edCancelar">Cancelar</button><button type="button" class="salvar" id="edSalvar">Salvar alterações</button></div>
+  </form>
+</dialog>
+<dialog id="janelaExcluir">
+  <h3 id="exTitulo"></h3>
+  <p id="exTexto"></p>
+  <div class="pilhaBotoes">
+    <button type="button" class="perigo" id="exUma"></button>
+    <button type="button" class="perigo" id="exTodas"></button>
+    <button type="button" class="cancelar" id="exCancelar">Cancelar</button>
+  </div>
 </dialog>
 <script>
 var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -117,7 +154,7 @@ var RE_SERVIDOR=/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
 function ler(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
 function gravar(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}
 var AVISOS={LOGIN_INCORRETO:'Usuário ou senha incorretos.',LOGIN_BLOQUEADO:'Muitas tentativas erradas. Aguarde 15 minutos.',LOGIN_SEM_SENHA:'Defina a senha desse usuário no script do servidor e publique uma nova versão.',LOGIN_EXPIRADO:'Sua sessão terminou. Entre de novo.'};
-function pedirLogin(aviso){gravar('cm_token','');sessao.token='';$('tela').hidden=true;$('abrir').hidden=true;if($('janela').open)$('janela').close();$('entrada').hidden=false;$('caixaServidor').hidden=!!sessao.servidor;var x=$('erroSenha');x.textContent=aviso||'';x.hidden=!aviso;$('senha').value='';$('usuario').value=ler('cm_usuario');($('usuario').value?$('senha'):sessao.servidor?$('usuario'):$('servidor')).focus()}
+function pedirLogin(aviso){gravar('cm_token','');sessao.token='';$('tela').hidden=true;$('abrir').hidden=true;['janela','janelaEditar','janelaExcluir'].forEach(function(j){if($(j).open)$(j).close()});$('entrada').hidden=false;$('caixaServidor').hidden=!!sessao.servidor;var x=$('erroSenha');x.textContent=aviso||'';x.hidden=!aviso;$('senha').value='';$('usuario').value=ler('cm_usuario');($('usuario').value?$('senha'):sessao.servidor?$('usuario'):$('servidor')).focus()}
 // credentials omit: a página nunca envia cookies do Google, então as contas do navegador não interferem.
 function enviar(corpo){return fetch(sessao.servidor,{method:'POST',credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(corpo)}).then(function(r){if(!r.ok)throw new Error('HTTP');return r.json()})}
 var SEM_REDE='Não consegui falar com o servidor. Verifique a internet e tente de novo.';
@@ -148,7 +185,7 @@ function desenhar(d){
     var par=i.parcela&&i.parcela!=='Mensal'?' ('+esc(i.parcela)+')':'';
     h+='<div class="item"><div class="lin" style="padding:0"><span>'+esc(i.descricao)+par+'</span><b>'+(i.tipo==='Receita'?'+ ':'')+real(i.valor)+'</b></div><div class="sub">'+ddmm(i.data)+', '+esc(i.categoria)+', '+sit+(i.origem.indexOf('app:')===0?', por '+esc(i.origem.slice(4)):'')+'</div><div class="acoes">';
     if(i.pendente)h+='<button class="forte" data-baixar="'+esc(i.id)+'">'+(i.tipo==='Receita'?'Recebi':'Paguei')+'</button>';
-    h+='<button data-excluir="'+esc(i.id)+'">Excluir</button></div></div>';
+    h+='<button data-editar="'+esc(i.id)+'">Editar</button><button data-excluir="'+esc(i.id)+'">Excluir</button></div></div>';
   });
   h+='</section></div><div>';
   if(d.categorias.length){var maior=d.categorias[0].valor;h+='<section><h3>Gastos por categoria</h3>';d.categorias.slice(0,6).forEach(function(c){h+='<div class="cat"><div class="lin" style="padding:0"><span>'+esc(c.nome)+'</span><b>'+real(c.valor)+'</b></div><div class="trilho"><i style="width:'+(c.valor/maior*100).toFixed(1)+'%"></i></div></div>'});h+='</section>'}
@@ -168,18 +205,49 @@ function escolherTipo(t){tipo=t;document.querySelectorAll('[data-tipo]').forEach
 $('abrir').onclick=function(){if(!estado)return;$('form').reset();$('erroForm').hidden=true;$('caixaParcelas').hidden=true;$('data').value=estado.mes===estado.mesAtual?estado.hoje:estado.mes+'-01';escolherTipo('Despesa');$('janela').showModal();$('valor').focus()};
 $('cancelar').onclick=function(){$('janela').close()};
 $('data').onchange=ajustarSituacao;
-$('repetir').onchange=function(){$('caixaParcelas').hidden=this.value!=='parcelado'};
+$('repetir').onchange=function(){$('caixaParcelas').hidden=this.value!=='parcelado';previa()};
+function centavos(t){t=String(t).replace(/[^\d.,]/g,'');if(!t)return 0;var m=t.match(/[.,](\d{1,2})$/),i=t,d='';if(m){i=t.slice(0,m.index);d=m[1]}return parseInt(i.replace(/[.,]/g,'')||'0',10)*100+parseInt((d+'00').slice(0,2),10)}
+function previa(){var n=parseInt($('parcelas').value,10),v=centavos($('valor').value),x=$('previa');if(!(n>=1)||!v){x.textContent='';return}x.textContent=$('valorModo').value==='parcela'?n+' parcelas de '+real(v)+'. Total: '+real(v*n):n+' parcelas de cerca de '+real(Math.floor(v/n))+'. Total: '+real(v)}
+['valor','parcelas','valorModo'].forEach(function(i){$(i).addEventListener('input',previa)});
+var emEdicao=null,emExclusao=null;
+function ehSerie(i){return i.qtdSerie>1}
+function nomeSerie(i){return i.parcela==='Mensal'?'mensais':'parcelas'}
+function abrirEdicao(id){
+  var i=estado.itens.filter(function(x){return x.id===id})[0];if(!i)return;emEdicao=i;
+  $('erroEditar').hidden=true;$('edValor').value=(i.valor/100).toFixed(2).replace('.',',');$('edDescricao').value=i.descricao;$('edData').value=i.data;
+  var r=i.tipo==='Receita';$('edSituacao').innerHTML='<option value="feito">'+(r?'Recebido':'Pago')+'</option><option value="pendente">'+(r?'A receber':'A pagar')+'</option>';$('edSituacao').value=i.pendente?'pendente':'feito';
+  $('caixaEscopo').hidden=!ehSerie(i);
+  if(ehSerie(i)){$('edEscopo').innerHTML='<option value="todos">Todas as '+i.qtdSerie+' '+nomeSerie(i)+'</option><option value="um">Só esta'+(i.parcela&&i.parcela!=='Mensal'?' parcela ('+esc(i.parcela)+')':'')+'</option>';$('edEscopo').value='todos'}
+  ajustarEscopo();$('janelaEditar').showModal();$('edValor').focus();
+}
+function ajustarEscopo(){var i=emEdicao,t=ehSerie(i)&&$('edEscopo').value==='todos';$('caixaEdSituacao').hidden=t;$('edRotuloValor').textContent=ehSerie(i)?'Valor de cada parcela':'Valor';$('edAviso').textContent=t?'Muda valor, descrição e dia de todas. A situação de cada uma não muda.':''}
+$('edEscopo').onchange=ajustarEscopo;
+$('edCancelar').onclick=function(){$('janelaEditar').close()};
+$('edSalvar').onclick=function(){
+  var b=this;b.disabled=true;b.textContent='Salvando...';var fim=function(){b.disabled=false;b.textContent='Salvar alterações'};
+  chamar('editar',{mes:estado.mes,edicao:{id:emEdicao.id,escopo:ehSerie(emEdicao)?$('edEscopo').value:'um',valor:$('edValor').value,descricao:$('edDescricao').value,data:$('edData').value,situacao:$('edSituacao').value}},function(d){fim();$('janelaEditar').close();desenhar(d)},function(e){fim();var x=$('erroEditar');x.textContent=e.message;x.hidden=false});
+};
+function pedirExclusao(id){
+  var i=estado.itens.filter(function(x){return x.id===id})[0];if(!i)return;emExclusao=i;
+  $('exTitulo').textContent='Excluir '+i.descricao+'?';
+  if(ehSerie(i)){$('exTexto').textContent='Este lançamento faz parte de '+i.qtdSerie+' '+nomeSerie(i)+'. Isso não pode ser desfeito.';$('exUma').textContent='Excluir só esta';$('exTodas').textContent='Excluir todas as '+i.qtdSerie;$('exTodas').hidden=false}
+  else{$('exTexto').textContent='Isso não pode ser desfeito.';$('exUma').textContent='Excluir';$('exTodas').hidden=true}
+  $('janelaExcluir').showModal();
+}
+function excluir(escopo){$('janelaExcluir').close();$('tela').classList.add('carregando');chamar('excluir',{id:emExclusao.id,mes:estado.mes,escopo:escopo},desenhar)}
+$('exUma').onclick=function(){excluir('um')};$('exTodas').onclick=function(){excluir('todos')};$('exCancelar').onclick=function(){$('janelaExcluir').close()};
 document.querySelectorAll('[data-tipo]').forEach(function(b){b.onclick=function(){escolherTipo(b.dataset.tipo)}});
 $('salvar').onclick=function(){
   var b=this;b.disabled=true;b.textContent='Salvando...';
-  chamar('lancar',{lancamento:{tipo:tipo,valor:$('valor').value,descricao:$('descricao').value,data:$('data').value,situacao:$('situacao').value,repetir:$('repetir').value,parcelas:$('parcelas').value}},function(d){b.disabled=false;b.textContent='Salvar';$('janela').close();desenhar(d)},function(e){b.disabled=false;b.textContent='Salvar';var x=$('erroForm');x.textContent=(e&&e.message)||'Não foi possível salvar. Verifique a internet e tente de novo.';x.hidden=false});
+  chamar('lancar',{lancamento:{tipo:tipo,valorModo:$('valorModo').value,valor:$('valor').value,descricao:$('descricao').value,data:$('data').value,situacao:$('situacao').value,repetir:$('repetir').value,parcelas:$('parcelas').value}},function(d){b.disabled=false;b.textContent='Salvar';$('janela').close();desenhar(d)},function(e){b.disabled=false;b.textContent='Salvar';var x=$('erroForm');x.textContent=(e&&e.message)||'Não foi possível salvar. Verifique a internet e tente de novo.';x.hidden=false});
 };
 $('tela').onclick=function(ev){
   var t=ev.target,d=t.dataset;
   if(d.sair){if(confirm('Sair desta conta neste aparelho?'))pedirLogin('');return}
   if(d.mes)carregar(d.mes);
   else if(d.baixar){$('tela').classList.add('carregando');chamar('baixar',{id:d.baixar,mes:estado.mes},desenhar)}
-  else if(d.excluir&&confirm('Excluir este lançamento?')){$('tela').classList.add('carregando');chamar('excluir',{id:d.excluir,mes:estado.mes},desenhar)}
+  else if(d.editar)abrirEdicao(d.editar);
+  else if(d.excluir)pedirExclusao(d.excluir);
 };
 $('formEntrar').onsubmit=function(ev){
   ev.preventDefault();
