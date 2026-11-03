@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle Mensal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-192.png">
+<meta name="theme-color" content="#16302E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta charset="utf-8">
+<style>
+:root{--fundo:#EDF1EE;--papel:#FAFBF9;--tinta:#16302E;--suave:#55696A;--linha:#CBD5D0;--receita:#1D6FA8;--gasto:#C2571A;--alerta:#A3261C;--campo:#FFF}
+@media (prefers-color-scheme:dark){:root{--fundo:#122120;--papel:#1A2C2B;--tinta:#E8EFEB;--suave:#A0B2AF;--linha:#35494A;--receita:#4F9BD1;--gasto:#D9763A;--alerta:#F0897F;--campo:#122120}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;padding-bottom:92px}
+main{max-width:560px;margin:0 auto;padding:12px 16px}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:3px solid var(--receita);outline-offset:2px}
+.topo{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.topo h1{font-size:1.15rem;margin:0}
+.seta{width:44px;height:44px;border-radius:50%;border:1px solid var(--linha);background:none;font-size:1.3rem}
+.placar{display:grid;grid-template-columns:1fr 1fr;background:var(--papel);border-radius:6px}
+.kpi{padding:12px 14px;min-width:0}
+.kpi:nth-child(even){border-left:1px solid var(--linha)}
+.kpi:nth-child(n+3){border-top:1px solid var(--linha)}
+.kpi h2{font-size:.82rem;font-weight:500;color:var(--suave);margin:0 0 2px}
+.kpi b{font-size:1.2rem;white-space:nowrap}
+.kpi small{display:block;color:var(--suave);font-size:.78rem}
+.marca{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.neg{color:var(--alerta)}
+.alerta{background:var(--papel);border-left:4px solid var(--alerta);padding:8px 12px;margin:12px 0 0;font-size:.92rem}
+.erro{background:var(--papel);border-left:4px solid var(--alerta);padding:10px 12px;margin:12px 0}
+section{background:var(--papel);border-radius:6px;padding:12px 14px;margin-top:12px}
+h3{font-size:1rem;margin:0 0 6px}
+.lin{display:flex;justify-content:space-between;gap:10px;padding:5px 0}
+.lin b{font-weight:600;white-space:nowrap}
+.cat{margin-bottom:8px;font-size:.92rem}
+.trilho{height:6px;background:var(--fundo);border-radius:3px;margin-top:3px}.trilho i{display:block;height:100%;background:var(--gasto);border-radius:3px}
+.item{padding:10px 0;border-bottom:1px solid var(--linha)}.item:last-child{border-bottom:0}
+.item .sub{font-size:.82rem;color:var(--suave)}
+.item .acoes{display:flex;gap:18px;margin-top:4px}
+.item .acoes button{background:none;border:0;padding:6px 0;text-decoration:underline;font-size:.88rem;color:var(--suave)}
+.item .acoes .forte{color:var(--tinta);font-weight:600}
+.vazio{color:var(--suave);margin:4px 0}
+.novo{position:fixed;left:16px;right:16px;bottom:16px;max-width:528px;margin:0 auto;padding:15px;border:0;border-radius:8px;background:var(--tinta);color:var(--papel);font-weight:600;font-size:1.05rem}
+dialog{border:0;border-radius:10px;padding:16px;width:calc(100% - 24px);max-width:520px;background:var(--papel);color:var(--tinta)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+label{display:block;font-weight:600;font-size:.9rem;margin:12px 0 4px}
+input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px solid var(--linha);border-radius:6px;background:var(--campo);color:var(--tinta)}
+.duplo{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.opcao{padding:12px;border:1px solid var(--linha);background:var(--campo);border-radius:6px;font-weight:500}
+.opcao[aria-pressed=true]{background:var(--tinta);color:var(--papel);border-color:var(--tinta);font-weight:600}
+.fim{display:flex;gap:10px;margin-top:16px}
+.salvar{flex:1;padding:14px;border:0;border-radius:6px;background:var(--tinta);color:var(--papel);font-weight:600}
+.cancelar{padding:14px;border:1px solid var(--linha);border-radius:6px;background:none}
+.carregando{opacity:.55;pointer-events:none}
+.linkbtn{background:none;border:0;padding:4px 0;text-decoration:underline;color:inherit;font-size:inherit}
+.conta{display:flex;align-items:center;justify-content:space-between;font-size:.82rem;color:var(--suave);margin:0 0 8px}
+@media (min-width:860px){main{max-width:1000px}.placar{grid-template-columns:repeat(4,1fr)}.kpi:nth-child(n+3){border-top:0}.kpi:nth-child(3){border-left:1px solid var(--linha)}#tela{padding-bottom:20px}.colunas{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}.novo{left:auto;right:calc(50% - 484px);width:260px;margin:0}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main id="entrada" hidden>
+  <h1 style="font-size:1.5rem;margin:10vh 0 12px">Controle Mensal</h1>
+  <form id="formEntrar" novalidate>
+    <div id="caixaServidor">
+      <label for="servidor">Endereço do servidor</label>
+      <input id="servidor" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <label for="usuario">Usuário</label>
+    <input id="usuario" autocomplete="username" autocapitalize="none" spellcheck="false">
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" autocomplete="current-password">
+    <p class="erro" id="erroSenha" role="alert" hidden></p>
+    <button class="salvar" id="entrar" style="width:100%;margin-top:14px">Entrar</button>
+  </form>
+</main>
+<main id="tela" aria-live="polite"><p class="vazio">Carregando...</p></main>
+<button class="novo" id="abrir" hidden>Novo lançamento</button>
+<dialog id="janela">
+  <form id="form" method="dialog" novalidate>
+    <h3>Novo lançamento</h3>
+    <div class="duplo" role="group" aria-label="Tipo">
+      <button type="button" class="opcao" data-tipo="Despesa" aria-pressed="true">Gasto</button>
+      <button type="button" class="opcao" data-tipo="Receita" aria-pressed="false">Receita</button>
+    </div>
+    <label for="valor">Valor</label>
+    <input id="valor" inputmode="decimal" autocomplete="off" placeholder="0,00">
+    <label for="descricao">Descrição</label>
+    <input id="descricao" autocomplete="off" maxlength="120" placeholder="Mercado, luz, salário">
+    <label for="data">Data</label>
+    <input id="data" type="date">
+    <label for="situacao">Situação</label>
+    <select id="situacao"><option value="feito">Pago</option><option value="pendente">A pagar</option></select>
+    <label for="repetir">Repetição</label>
+    <select id="repetir"><option value="nao">Só esta vez</option><option value="parcelado">Parcelado</option><option value="mensal">Todo mês, por 12 meses</option></select>
+    <div id="caixaParcelas" hidden>
+      <label for="parcelas">Número de parcelas (o valor é o total)</label>
+      <input id="parcelas" inputmode="numeric" value="2">
+    </div>
+    <p class="erro" id="erroForm" role="alert" hidden></p>
+    <div class="fim"><button type="button" class="cancelar" id="cancelar">Cancelar</button><button type="button" class="salvar" id="salvar">Salvar</button></div>
+  </form>
+</dialog>
+<script>
+var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var estado=null, tipo='Despesa', $=function(i){return document.getElementById(i)};
+function real(c){var n=Math.abs(c),s=Math.floor(n/100).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');return (c<0?'-':'')+'R$ '+s+','+('0'+(n%100)).slice(-2)}
+function esc(t){var d=document.createElement('div');d.textContent=t==null?'':t;return d.innerHTML}
+function nomeMes(m){return MESES[+m.slice(5,7)-1]+' de '+m.slice(0,4)}
+function ddmm(d){return d.slice(8,10)+'/'+d.slice(5,7)}
+function outroMes(m,n){var a=+m.slice(0,4),x=+m.slice(5,7)-1+n;a+=Math.floor(x/12);x=((x%12)+12)%12;return a+'-'+('0'+(x+1)).slice(-2)}
+var sessao={servidor:'',token:'',usuario:''};
+var RE_SERVIDOR=/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/;
+function ler(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+function gravar(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}
+var AVISOS={LOGIN_INCORRETO:'Usuário ou senha incorretos.',LOGIN_BLOQUEADO:'Muitas tentativas erradas. Aguarde 15 minutos.',LOGIN_SEM_SENHA:'Defina a senha desse usuário no script do servidor e publique uma nova versão.',LOGIN_EXPIRADO:'Sua sessão terminou. Entre de novo.'};
+function pedirLogin(aviso){gravar('cm_token','');sessao.token='';$('tela').hidden=true;$('abrir').hidden=true;if($('janela').open)$('janela').close();$('entrada').hidden=false;$('caixaServidor').hidden=!!sessao.servidor;var x=$('erroSenha');x.textContent=aviso||'';x.hidden=!aviso;$('senha').value='';$('usuario').value=ler('cm_usuario');($('usuario').value?$('senha'):sessao.servidor?$('usuario'):$('servidor')).focus()}
+// credentials omit: a página nunca envia cookies do Google, então as contas do navegador não interferem.
+function enviar(corpo){return fetch(sessao.servidor,{method:'POST',credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(corpo)}).then(function(r){if(!r.ok)throw new Error('HTTP');return r.json()})}
+var SEM_REDE='Não consegui falar com o servidor. Verifique a internet e tente de novo.';
+function chamar(acao,extra,ok,falha){
+  var corpo=Object.assign({acao:acao,token:sessao.token},extra);
+  enviar(corpo).then(function(r){
+    if(r.ok)return ok(r.dados);
+    if(r.codigo)return pedirLogin(AVISOS[r.codigo]);
+    (falha||mostrarErro)({message:r.erro});
+  }).catch(function(){(falha||mostrarErro)({message:SEM_REDE})});
+}
+function mostrarErro(e){$('tela').classList.remove('carregando');var m=(e&&e.message)||'Não consegui falar com o Google. Verifique a internet e tente de novo.';$('tela').insertAdjacentHTML('afterbegin','<p class="erro" role="alert">'+esc(m)+'</p>')}
+function carregar(m){$('tela').classList.add('carregando');chamar('dados',{mes:m},desenhar)}
+function variacao(a,b){if(!b)return 'Sem base no mês anterior';var v=(a-b)/b*100;return (v>0?'▲ ':v<0?'▼ ':'')+Math.abs(v).toFixed(1).replace('.',',')+'% no total sobre o mês anterior'}
+function desenhar(d){
+  estado=d;$('entrada').hidden=true;$('tela').hidden=false;$('abrir').hidden=false;var r=d.r,h='';
+  h+='<div class="topo"><button class="seta" data-mes="'+outroMes(d.mes,-1)+'" aria-label="Mês anterior">‹</button><h1>'+nomeMes(d.mes)+'</h1><button class="seta" data-mes="'+outroMes(d.mes,1)+'" aria-label="Próximo mês">›</button></div>';
+  h+='<p class="conta"><span>Conectado como '+esc(sessao.usuario)+'</span><button type="button" data-sair="1" class="linkbtn">Sair</button></p><div class="placar">';
+  h+='<div class="kpi"><h2><i class="marca" style="background:var(--receita)"></i>Recebido</h2><b>'+real(r.recebido)+'</b><small>A receber '+real(r.a_receber)+'</small><small>'+variacao(r.recebido+r.a_receber,d.anterior.receitas)+'</small></div>';
+  h+='<div class="kpi"><h2><i class="marca" style="background:var(--gasto)"></i>Pago</h2><b>'+real(r.pago)+'</b><small>A pagar '+real(r.a_pagar)+'</small><small>'+variacao(r.pago+r.a_pagar,d.anterior.despesas)+'</small></div>';
+  h+='<div class="kpi"><h2>Saldo atual</h2><b class="'+(d.saldo<0?'neg':'')+'">'+real(d.saldo)+'</b></div>';
+  h+='<div class="kpi"><h2>Fechamento previsto</h2><b class="'+(d.previsto<0?'neg':'')+'">'+real(d.previsto)+'</b></div></div>';
+  if(d.vencidas)h+='<p class="alerta">⚠ '+d.vencidas+(d.vencidas>1?' contas vencidas':' conta vencida')+', '+real(d.vencidasValor)+'</p>';
+  h+='<div class="colunas"><div><section><h3>Lançamentos</h3>';
+  if(!d.itens.length)h+='<p class="vazio">Nada lançado neste mês. Toque em Novo lançamento.</p>';
+  d.itens.forEach(function(i){
+    var sit=i.pendente?(i.data<d.hoje&&i.tipo==='Despesa'?'<span class="neg">⚠ vencida</span>':(i.tipo==='Receita'?'a receber':'a pagar')):esc((i.status||'').toLowerCase());
+    var par=i.parcela&&i.parcela!=='Mensal'?' ('+esc(i.parcela)+')':'';
+    h+='<div class="item"><div class="lin" style="padding:0"><span>'+esc(i.descricao)+par+'</span><b>'+(i.tipo==='Receita'?'+ ':'')+real(i.valor)+'</b></div><div class="sub">'+ddmm(i.data)+', '+esc(i.categoria)+', '+sit+(i.origem.indexOf('app:')===0?', por '+esc(i.origem.slice(4)):'')+'</div><div class="acoes">';
+    if(i.pendente)h+='<button class="forte" data-baixar="'+esc(i.id)+'">'+(i.tipo==='Receita'?'Recebi':'Paguei')+'</button>';
+    h+='<button data-excluir="'+esc(i.id)+'">Excluir</button></div></div>';
+  });
+  h+='</section></div><div>';
+  if(d.categorias.length){var maior=d.categorias[0].valor;h+='<section><h3>Gastos por categoria</h3>';d.categorias.slice(0,6).forEach(function(c){h+='<div class="cat"><div class="lin" style="padding:0"><span>'+esc(c.nome)+'</span><b>'+real(c.valor)+'</b></div><div class="trilho"><i style="width:'+(c.valor/maior*100).toFixed(1)+'%"></i></div></div>'});h+='</section>'}
+  if(d.vencimentos.length){h+='<section><h3>Próximos vencimentos</h3>';d.vencimentos.forEach(function(v){h+='<div class="lin"><span>'+ddmm(v.data)+' '+esc(v.descricao)+(v.data<d.hoje?' <span class="neg">⚠ vencida</span>':'')+'</span><b>'+real(v.valor)+'</b></div>'});h+='</section>'}
+  h+='<section><h3>Gastos futuros</h3>';
+  if(!d.futuros.length)h+='<p class="vazio">Nenhuma conta lançada para os próximos meses.</p>';
+  d.futuros.forEach(function(f){h+='<div class="lin"><span>'+nomeMes(f.mes)+'</span><b>'+real(f.valor)+'</b></div>'});
+  h+='</section></div></div>';
+  $('tela').innerHTML=h;$('tela').classList.remove('carregando');
+}
+function ajustarSituacao(){
+  var futuro=$('data').value>estado.hoje,s=$('situacao');
+  s.options[0].text=tipo==='Receita'?'Recebido':'Pago';s.options[1].text=tipo==='Receita'?'A receber':'A pagar';
+  s.value=futuro?'pendente':'feito';
+}
+function escolherTipo(t){tipo=t;document.querySelectorAll('[data-tipo]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.tipo===t)});ajustarSituacao()}
+$('abrir').onclick=function(){if(!estado)return;$('form').reset();$('erroForm').hidden=true;$('caixaParcelas').hidden=true;$('data').value=estado.mes===estado.mesAtual?estado.hoje:estado.mes+'-01';escolherTipo('Despesa');$('janela').showModal();$('valor').focus()};
+$('cancelar').onclick=function(){$('janela').close()};
+$('data').onchange=ajustarSituacao;
+$('repetir').onchange=function(){$('caixaParcelas').hidden=this.value!=='parcelado'};
+document.querySelectorAll('[data-tipo]').forEach(function(b){b.onclick=function(){escolherTipo(b.dataset.tipo)}});
+$('salvar').onclick=function(){
+  var b=this;b.disabled=true;b.textContent='Salvando...';
+  chamar('lancar',{lancamento:{tipo:tipo,valor:$('valor').value,descricao:$('descricao').value,data:$('data').value,situacao:$('situacao').value,repetir:$('repetir').value,parcelas:$('parcelas').value}},function(d){b.disabled=false;b.textContent='Salvar';$('janela').close();desenhar(d)},function(e){b.disabled=false;b.textContent='Salvar';var x=$('erroForm');x.textContent=(e&&e.message)||'Não foi possível salvar. Verifique a internet e tente de novo.';x.hidden=false});
+};
+$('tela').onclick=function(ev){
+  var t=ev.target,d=t.dataset;
+  if(d.sair){if(confirm('Sair desta conta neste aparelho?'))pedirLogin('');return}
+  if(d.mes)carregar(d.mes);
+  else if(d.baixar){$('tela').classList.add('carregando');chamar('baixar',{id:d.baixar,mes:estado.mes},desenhar)}
+  else if(d.excluir&&confirm('Excluir este lançamento?')){$('tela').classList.add('carregando');chamar('excluir',{id:d.excluir,mes:estado.mes},desenhar)}
+};
+$('formEntrar').onsubmit=function(ev){
+  ev.preventDefault();
+  var serv=$('caixaServidor').hidden?sessao.servidor:$('servidor').value.trim(),u=$('usuario').value.trim(),se=$('senha').value;
+  if(!RE_SERVIDOR.test(serv)){pedirLogin('Cole o endereço do servidor que termina em /exec.');$('caixaServidor').hidden=false;return}
+  if(!u||!se){var x=$('erroSenha');x.textContent='Informe usuário e senha.';x.hidden=false;return}
+  sessao.servidor=serv;var b=$('entrar');b.disabled=true;b.textContent='Entrando...';
+  enviar({acao:'entrar',usuario:u,senha:se}).then(function(r){
+    b.disabled=false;b.textContent='Entrar';
+    if(!r.ok){gravar('cm_usuario',u);return pedirLogin(AVISOS[r.codigo]||r.erro)}
+    sessao.token=r.token;sessao.usuario=r.usuario;gravar('cm_servidor',serv);gravar('cm_token',r.token);gravar('cm_usuario',r.usuario);
+    $('entrada').hidden=true;$('tela').hidden=false;$('tela').innerHTML='<p class="vazio">Carregando...</p>';carregar('');
+  }).catch(function(){b.disabled=false;b.textContent='Entrar';$('caixaServidor').hidden=false;var x=$('erroSenha');x.textContent='Não consegui falar com o servidor. Confira o endereço, se ele está publicado para Qualquer pessoa, e a internet.';x.hidden=false});
+};
+if('serviceWorker' in navigator)try{navigator.serviceWorker.register('sw.js').catch(function(){})}catch(e){}
+sessao.servidor=ler('cm_servidor');sessao.token=ler('cm_token');sessao.usuario=ler('cm_usuario');
+if(sessao.servidor&&sessao.token){$('tela').hidden=false;carregar('')}else{$('tela').hidden=true;pedirLogin('')}
+</script>
+</body>
+</html>
