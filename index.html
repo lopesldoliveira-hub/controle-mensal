@@ -74,6 +74,23 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 .grupo.pagas .cabeca h3,.grupo.pagas .cabeca b{color:var(--pago)}
 .item.feito .lin b{color:var(--pago)}
 #status{font-size:.88rem;margin:8px 0 0}#status.salvando{color:var(--suave)}
+.item[data-id]{cursor:pointer}
+.item[data-id]:hover{background:var(--fundo)}
+.clip{color:var(--tinta);font-weight:500}
+#janelaDetalhe{max-height:90vh;overflow:auto}
+.deValor{font-size:1.3rem;font-weight:700;margin:0}
+.blocoAnexo{border-top:1px solid var(--linha);margin-top:12px;padding-top:10px}
+.blocoAnexo .topoAnexo{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.blocoAnexo h4{margin:0;font-size:.95rem}
+.botaoAnexo{padding:9px 12px;border:1px solid var(--linha);border-radius:6px;background:var(--campo);font-weight:600;font-size:.88rem}
+.linhaAnexo{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 0;font-size:.92rem}
+.linhaAnexo span{overflow-wrap:anywhere;min-width:0}
+.linhaAnexo div{display:flex;gap:14px;flex:none}
+#visor{margin-top:12px;border-top:1px solid var(--linha);padding-top:10px}
+#visor img{display:block;max-width:100%;height:auto;border-radius:4px}
+#visor iframe{width:100%;height:60vh;border:1px solid var(--linha);border-radius:4px;background:#fff}
+.visorAcoes{display:flex;gap:18px;margin-bottom:8px;font-size:.92rem}
+@media (min-width:860px){#janelaDetalhe{max-width:760px}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -154,6 +171,18 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
     <div class="fim"><button type="button" class="cancelar" id="edCancelar">Cancelar</button><button type="button" class="salvar" id="edSalvar">Salvar alterações</button></div>
   </form>
 </dialog>
+<dialog id="janelaDetalhe" aria-labelledby="deTitulo">
+  <h3 id="deTitulo"></h3>
+  <p class="deValor" id="deValor"></p>
+  <p class="sub" id="deInfo"></p>
+  <div id="deBoletos"></div>
+  <div id="deComprovantes"></div>
+  <p class="erro" id="erroAnexo" role="alert" hidden></p>
+  <p class="previa" id="progressoAnexo" role="status" hidden></p>
+  <div id="visor" hidden></div>
+  <input id="arquivoAnexo" type="file" accept="image/*,application/pdf" class="oculto" tabindex="-1" aria-hidden="true">
+  <div class="fim"><button type="button" class="cancelar" id="deFechar" style="flex:1">Fechar</button></div>
+</dialog>
 <dialog id="janelaExcluir">
   <h3 id="exTitulo"></h3>
   <p id="exTexto"></p>
@@ -217,9 +246,10 @@ function itemHtml(i,hj,comAno){
   if(feito)sit='<span class="ok">✓ '+esc((i.status||'').toLowerCase())+'</span>';
   else sit=i.data<hj&&i.tipo==='Despesa'?'<span class="neg">⚠ vencida</span>':(i.tipo==='Receita'?'a receber':'a pagar');
   if(i.temporario)sit+=', salvando';
+  var ax=i.anexos||[],bo=ax.filter(function(a){return a.tipo==='boleto'}).length,co=ax.length-bo,rot=[];if(bo)rot.push('boleto');if(co)rot.push('comprovante');
   var par=i.parcela&&i.parcela!=='Mensal'?' ('+esc(i.parcela)+')':'';
   var dt=ddmm(i.data)+(comAno?'/'+i.data.slice(0,4):'');
-  var h='<div class="item'+(feito?' feito':'')+'"><div class="lin" style="padding:0"><span>'+esc(i.descricao)+par+'</span><b>'+(i.tipo==='Receita'?'+ ':'')+real(i.valor)+'</b></div><div class="sub">'+dt+', '+esc(i.categoria)+', '+sit+(String(i.origem||'').indexOf('app:')===0?', por '+esc(i.origem.slice(4)):'')+'</div>';
+  var h='<div class="item'+(feito?' feito':'')+'"'+(i.temporario?'':' data-id="'+esc(i.id)+'"')+'><div class="lin" style="padding:0"><span>'+esc(i.descricao)+par+'</span><b>'+(i.tipo==='Receita'?'+ ':'')+real(i.valor)+'</b></div><div class="sub">'+dt+', '+esc(i.categoria)+', '+sit+(String(i.origem||'').indexOf('app:')===0?', por '+esc(i.origem.slice(4)):'')+(rot.length?', <span class="clip">📎 '+rot.join(' e ')+'</span>':'')+'</div>';
   if(i.temporario)return h+'</div>';
   h+='<div class="acoes">';
   if(i.pendente)h+='<button class="forte" data-baixar="'+esc(i.id)+'">'+(i.tipo==='Receita'?'Recebi':'Paguei')+'</button>';
@@ -336,7 +366,7 @@ function desenharBusca(){
 
 function pedirLogin(aviso){
   sessao.token='';gravar('cm_token','');$('tela').hidden=true;$('abrir').hidden=true;$('areaBusca').hidden=true;
-  ['janela','janelaEditar','janelaExcluir'].forEach(function(j){if($(j).open)$(j).close()});
+  ['janela','janelaEditar','janelaExcluir','janelaDetalhe'].forEach(function(j){if($(j).open)$(j).close()});
   $('entrada').hidden=false;$('caixaServidor').hidden=!!sessao.servidor;var x=$('erroSenha');x.textContent=aviso||'';x.hidden=!aviso;$('senha').value='';$('usuario').value=ler('cm_usuario');
   ($('usuario').value?$('senha'):sessao.servidor?$('usuario'):$('servidor')).focus();
 }
@@ -352,6 +382,7 @@ function aoClicar(ev){
   else if(d.baixar)operar({tipo:'baixar',id:d.baixar,quando:agora()});
   else if(d.editar)abrirEdicao(d.editar);
   else if(d.excluir)pedirExclusao(d.excluir);
+  else{var it=ev.target.closest('.item[data-id]');if(it)abrirDetalhe(it.dataset.id)}
 }
 $('tela').onclick=aoClicar;
 $('resultados').onclick=function(ev){if(ev.target.dataset.limpar){buscaTermo='';$('termo').value='';desenharBusca();$('termo').focus();return}aoClicar(ev)};
@@ -421,6 +452,78 @@ $('formEntrar').onsubmit=function(ev){
     iniciarTela();
   }).catch(function(){b.disabled=false;b.textContent='Entrar';$('caixaServidor').hidden=false;x.textContent='Não consegui falar com o servidor. Confira o endereço, se ele está publicado para Qualquer pessoa, e a internet.';x.hidden=false});
 };
+var emDetalhe=null,tipoAnexo='boleto',urlVisor='';
+var TIPOS_OK={'application/pdf':1,'image/jpeg':1,'image/png':1,'image/webp':1,'image/heic':1};
+function blocoAnexo(i,tipo,titulo){
+  var l=(i.anexos||[]).filter(function(a){return a.tipo===tipo}),h='<div class="blocoAnexo"><div class="topoAnexo"><h4>'+titulo+'</h4><button type="button" class="botaoAnexo" data-anexar="'+tipo+'">Anexar</button></div>';
+  if(!l.length)h+='<p class="vazio" style="font-size:.88rem">Nenhum arquivo anexado.</p>';
+  l.forEach(function(a){h+='<div class="linhaAnexo"><span>'+esc(a.nome)+'</span><div><button type="button" class="linkbtn" data-ver="'+esc(a.id)+'">Ver</button><button type="button" class="linkbtn" data-tirar="'+esc(a.id)+'">Excluir</button></div></div>'});
+  return h+'</div>';
+}
+function desenharDetalhe(){
+  var i=emDetalhe&&acharItem(emDetalhe);if(!i){if($('janelaDetalhe').open)$('janelaDetalhe').close();return}
+  var par=i.parcela&&i.parcela!=='Mensal'?' ('+i.parcela+')':'';
+  $('deTitulo').textContent=i.descricao+par;$('deValor').textContent=real(i.valor);
+  var sit=i.pendente?(i.tipo==='Receita'?'A receber':(i.data<hoje()?'Vencida':'A pagar')):(i.status||'');
+  $('deInfo').textContent=ddmm(i.data)+'/'+i.data.slice(0,4)+', '+i.categoria+', '+sit;
+  $('deBoletos').innerHTML=i.tipo==='Receita'?'':blocoAnexo(i,'boleto','Boleto');
+  $('deComprovantes').innerHTML=blocoAnexo(i,'comprovante','Comprovante');
+}
+function fecharVisor(){if(urlVisor){URL.revokeObjectURL(urlVisor);urlVisor=''}$('visor').innerHTML='';$('visor').hidden=true}
+function abrirDetalhe(id){emDetalhe=id;$('erroAnexo').hidden=true;$('progressoAnexo').hidden=true;fecharVisor();desenharDetalhe();$('janelaDetalhe').showModal()}
+function erroAnexo(m){$('progressoAnexo').hidden=true;var x=$('erroAnexo');x.textContent=m==='Operação desconhecida.'?SEM_NOVA:m;x.hidden=false}
+function progresso(m){$('erroAnexo').hidden=true;var x=$('progressoAnexo');x.textContent=m;x.hidden=false}
+function b64DeBlob(b){return new Promise(function(ok,no){var r=new FileReader();r.onload=function(){ok(String(r.result).split(',')[1])};r.onerror=no;r.readAsDataURL(b)})}
+// Fotos do celular são reduzidas antes do envio: continuam legíveis e chegam muito mais rápido.
+function prepararArquivo(f){
+  if(!/^image\/(jpeg|png|webp)$/.test(f.type)||f.size<500000||!window.createImageBitmap)return Promise.resolve({blob:f,mime:f.type,nome:f.name});
+  return createImageBitmap(f).then(function(img){
+    var e=Math.min(1,2000/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*e);c.height=Math.round(img.height*e);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);if(img.close)img.close();
+    return new Promise(function(ok){c.toBlob(function(b){if(b&&b.size<f.size)ok({blob:b,mime:'image/jpeg',nome:f.name.replace(/\.[^.]+$/,'')+'.jpg'});else ok({blob:f,mime:f.type,nome:f.name})},'image/jpeg',.85)});
+  }).catch(function(){return {blob:f,mime:f.type,nome:f.name}});
+}
+$('arquivoAnexo').onchange=function(){
+  var f=this.files[0],lanc=emDetalhe,tp=tipoAnexo;this.value='';if(!f)return;
+  var mime=f.type||(/\.pdf$/i.test(f.name)?'application/pdf':/\.hei[cf]$/i.test(f.name)?'image/heic':'');
+  if(!TIPOS_OK[mime])return erroAnexo('Envie um arquivo PDF ou uma imagem (JPG, PNG, WEBP ou HEIC).');
+  progresso('Preparando o arquivo...');
+  prepararArquivo(f).then(function(a){
+    if(a.blob.size>15*1024*1024)throw {msg:'O arquivo passa de 15 MB. Envie um arquivo menor.'};
+    return b64DeBlob(a.blob).then(function(b){progresso('Enviando o arquivo. Pode levar alguns segundos...');return enviar({acao:'anexar',token:sessao.token,lancamentoId:lanc,tipo:tp,anexoId:novoId('a'),nome:a.nome,mime:a.mime||mime,base64:b})});
+  }).then(function(r){
+    if(r.codigo)return pedirLogin(AVISOS[r.codigo]);
+    if(!r.ok)return erroAnexo(r.erro);
+    $('progressoAnexo').hidden=true;receber(r.itens);desenharDetalhe();
+  }).catch(function(e){erroAnexo(e&&e.msg||'Não consegui enviar o arquivo. Verifique a internet e tente de novo.')});
+};
+$('janelaDetalhe').onclick=function(ev){
+  var d=ev.target.dataset;
+  if(d.anexar){if(fila.length)return erroAnexo('Aguarde as alterações serem salvas e tente de novo.');tipoAnexo=d.anexar;$('arquivoAnexo').click()}
+  else if(d.ver)verAnexo(d.ver);
+  else if(d.tirar&&confirm('Excluir este arquivo? Ele vai para a lixeira do Drive.')){
+    if(fila.length)return erroAnexo('Aguarde as alterações serem salvas e tente de novo.');
+    progresso('Excluindo...');fecharVisor();
+    enviar({acao:'excluir_anexo',token:sessao.token,id:d.tirar}).then(function(r){
+      if(r.codigo)return pedirLogin(AVISOS[r.codigo]);if(!r.ok)return erroAnexo(r.erro);
+      $('progressoAnexo').hidden=true;receber(r.itens);desenharDetalhe();
+    }).catch(function(){erroAnexo('Não consegui excluir. Verifique a internet e tente de novo.')});
+  }
+};
+function verAnexo(id){
+  progresso('Abrindo o arquivo...');fecharVisor();
+  enviar({acao:'ver_anexo',token:sessao.token,id:id}).then(function(r){
+    if(r.codigo)return pedirLogin(AVISOS[r.codigo]);if(!r.ok)return erroAnexo(r.erro);
+    if(!TIPOS_OK[r.mime])return erroAnexo('Tipo de arquivo não permitido.');
+    var bin=atob(r.base64),n=bin.length,u=new Uint8Array(n);while(n--)u[n]=bin.charCodeAt(n);
+    urlVisor=URL.createObjectURL(new Blob([u],{type:r.mime}));
+    var v=$('visor'),pdf=r.mime==='application/pdf',h='<div class="visorAcoes"><a href="'+urlVisor+'" target="_blank" rel="noopener">Abrir em tela cheia</a><a href="'+urlVisor+'" download="'+esc(r.nome)+'">Baixar</a></div>';
+    if(pdf){if(innerWidth>=860)h+='<iframe src="'+urlVisor+'" title="'+esc(r.nome)+'"></iframe>'}
+    else h+='<img src="'+urlVisor+'" alt="'+esc(r.nome)+'">';
+    v.innerHTML=h;v.hidden=false;$('progressoAnexo').hidden=true;v.scrollIntoView({block:'nearest'});
+  }).catch(function(){erroAnexo('Não consegui abrir o arquivo. Verifique a internet e tente de novo.')});
+}
+$('deFechar').onclick=function(){fecharVisor();$('janelaDetalhe').close()};
 function iniciarTela(){
   mesAtivo=mesAtivo||hoje().slice(0,7);
   $('entrada').hidden=true;$('areaBusca').hidden=false;$('tela').hidden=false;$('abrir').hidden=false;
