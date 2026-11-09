@@ -93,6 +93,7 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 @media (min-width:860px){#janelaDetalhe{max-width:760px}}
 .caixa .lin{border-bottom:1px solid var(--linha)}.caixa .lin.total{font-weight:600;border-bottom:0}
 .azul{color:var(--receita)}
+.caixa .previsto{font-size:1.1rem;padding-top:8px}
 .atrasadasPagas{margin-top:6px;font-size:.9rem}.atrasadasPagas summary{cursor:pointer;color:var(--suave);padding:4px 0}
 [hidden]{display:none!important}
 </style>
@@ -278,11 +279,7 @@ function desenhar(){
   var d=resumo(mesAtivo),r=d.r,h='';
   $('entrada').hidden=true;$('areaBusca').hidden=false;$('tela').hidden=false;$('abrir').hidden=false;
   h+='<div class="topo"><button class="seta" data-mes="'+outroMes(d.mes,-1)+'" aria-label="Mês anterior">‹</button><h1>'+nomeMes(d.mes)+'</h1><button class="seta" data-mes="'+outroMes(d.mes,1)+'" aria-label="Próximo mês">›</button></div>';
-  h+='<p class="conta"><span>Conectado como '+esc(sessao.usuario)+'</span><button type="button" data-sair="1" class="linkbtn">Sair</button></p><div class="placar">';
-  h+='<div class="kpi"><h2><i class="marca" style="background:var(--receita)"></i>Recebido</h2><b>'+real(r.recebido)+'</b><small>A receber '+real(r.a_receber)+'</small><small>'+variacao(r.recebido+r.a_receber,d.anterior.receitas)+'</small></div>';
-  h+='<div class="kpi"><h2><i class="marca" style="background:var(--pago)"></i>Pago</h2><b>'+real(r.pago)+'</b><small>A pagar '+real(r.a_pagar)+'</small><small>'+variacao(r.pago+r.a_pagar,d.anterior.despesas)+'</small></div>';
-  h+='<div class="kpi"><h2>Saldo atual</h2><b class="'+(d.saldo<0?'neg':'')+'">'+real(d.saldo)+'</b></div>';
-  h+='<div class="kpi"><h2>Fechamento previsto</h2><b class="'+(d.previsto<0?'neg':'')+'">'+real(d.previsto)+'</b></div></div>';
+  h+='<p class="conta"><span>Conectado como '+esc(sessao.usuario)+'</span><button type="button" data-sair="1" class="linkbtn">Sair</button></p></p>';
   var cx=d.caixa;
   h+='<section class="caixa"><h3>Caixa do mês</h3><p class="sub" style="margin:0 0 6px">Pelo dia em que cada conta foi paga ou recebida</p>';
   h+='<div class="lin"><span>Entrou (receitas)</span><b class="azul">'+real(cx.entrou)+'</b></div>';
@@ -290,7 +287,8 @@ function desenhar(){
   h+='<div class="lin"><span>Pago, contas atrasadas de meses anteriores</span><b>'+real(cx.atrasadas)+'</b></div>';
   if(cx.adiantadas)h+='<div class="lin"><span>Pago adiantado, contas de meses seguintes</span><b>'+real(cx.adiantadas)+'</b></div>';
   h+='<div class="lin total"><span>Total pago no mês</span><b class="ok">'+real(cx.pago)+'</b></div>';
-  h+='<div class="lin total"><span>'+(cx.sobra<0?'Faltou':'Sobrou')+'</span><b class="'+(cx.sobra<0?'neg':'')+'">'+real(Math.abs(cx.sobra))+'</b></div>';
+  h+='<div class="lin total" style="border-bottom:1px solid var(--linha)"><span>'+(cx.sobra<0?'Faltou':'Sobrou')+'</span><b class="'+(cx.sobra<0?'neg':'')+'">'+real(Math.abs(cx.sobra))+'</b></div>';
+  h+='<div class="lin total previsto"><span>Fechamento previsto</span><b class="'+(d.previsto<0?'neg':'')+'">'+real(d.previsto)+'</b></div>';
   if(cx.listaAtrasadas.length){h+='<details class="atrasadasPagas"><summary>Ver as '+cx.listaAtrasadas.length+' contas atrasadas pagas neste mês</summary>';cx.listaAtrasadas.forEach(function(i){h+='<div class="lin"><span>'+esc(i.descricao)+(i.parcela&&i.parcela!=='Mensal'?' ('+esc(i.parcela)+')':'')+' <span class="sub">venceu '+ddmm(i.data)+'/'+i.data.slice(0,4)+(i.pagoEm?', paga '+ddmm(i.pagoEm):'')+'</span></span><b>'+real(i.valor)+'</b></div>'});h+='</details>'}
   h+='</section>';
   if(d.vencidas)h+='<p class="alerta">⚠ '+d.vencidas+(d.vencidas>1?' contas vencidas':' conta vencida')+', '+real(d.vencidasValor)+'</p>';
