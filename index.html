@@ -91,6 +91,9 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 #visor iframe{width:100%;height:60vh;border:1px solid var(--linha);border-radius:4px;background:#fff}
 .visorAcoes{display:flex;gap:18px;margin-bottom:8px;font-size:.92rem}
 @media (min-width:860px){#janelaDetalhe{max-width:760px}}
+.caixa .lin{border-bottom:1px solid var(--linha)}.caixa .lin.total{font-weight:600;border-bottom:0}
+.azul{color:var(--receita)}
+.atrasadasPagas{margin-top:6px;font-size:.9rem}.atrasadasPagas summary{cursor:pointer;color:var(--suave);padding:4px 0}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -232,6 +235,16 @@ function resumo(mes){
     if(i.pendente&&i.data<hj){d.vencidas++;d.vencidasValor+=i.valor}
     if(i.pendente&&i.data<=lim)d.vencimentos.push(i);
   });
+  // Caixa: conta pelo dia do pagamento. Sem essa data (lançamentos antigos), usa o vencimento.
+  d.caixa={entrou:0,doMes:0,atrasadas:0,adiantadas:0,listaAtrasadas:[]};
+  base.itens.forEach(function(i){
+    if(i.pendente||(i.pagoEm||i.data).slice(0,7)!==mes)return;
+    if(i.tipo==='Receita'){d.caixa.entrou+=i.valor;return}
+    if(i.mes===mes)d.caixa.doMes+=i.valor;
+    else if(i.mes<mes){d.caixa.atrasadas+=i.valor;d.caixa.listaAtrasadas.push(i)}
+    else d.caixa.adiantadas+=i.valor;
+  });
+  d.caixa.pago=d.caixa.doMes+d.caixa.atrasadas+d.caixa.adiantadas;d.caixa.sobra=d.caixa.entrou-d.caixa.pago;d.caixa.listaAtrasadas.sort(porData);
   d.itens.sort(porData);d.vencimentos.sort(porData);d.vencimentos=d.vencimentos.slice(0,6);
   d.saldo=d.r.recebido-d.r.pago;d.previsto=d.saldo+d.r.a_receber-d.r.a_pagar;
   d.futuros=Object.keys(fut).sort().map(function(m){return {mes:m,valor:fut[m]}});
@@ -270,6 +283,16 @@ function desenhar(){
   h+='<div class="kpi"><h2><i class="marca" style="background:var(--pago)"></i>Pago</h2><b>'+real(r.pago)+'</b><small>A pagar '+real(r.a_pagar)+'</small><small>'+variacao(r.pago+r.a_pagar,d.anterior.despesas)+'</small></div>';
   h+='<div class="kpi"><h2>Saldo atual</h2><b class="'+(d.saldo<0?'neg':'')+'">'+real(d.saldo)+'</b></div>';
   h+='<div class="kpi"><h2>Fechamento previsto</h2><b class="'+(d.previsto<0?'neg':'')+'">'+real(d.previsto)+'</b></div></div>';
+  var cx=d.caixa;
+  h+='<section class="caixa"><h3>Caixa do mês</h3><p class="sub" style="margin:0 0 6px">Pelo dia em que cada conta foi paga ou recebida</p>';
+  h+='<div class="lin"><span>Entrou (receitas)</span><b class="azul">'+real(cx.entrou)+'</b></div>';
+  h+='<div class="lin"><span>Pago, contas deste mês</span><b>'+real(cx.doMes)+'</b></div>';
+  h+='<div class="lin"><span>Pago, contas atrasadas de meses anteriores</span><b>'+real(cx.atrasadas)+'</b></div>';
+  if(cx.adiantadas)h+='<div class="lin"><span>Pago adiantado, contas de meses seguintes</span><b>'+real(cx.adiantadas)+'</b></div>';
+  h+='<div class="lin total"><span>Total pago no mês</span><b class="ok">'+real(cx.pago)+'</b></div>';
+  h+='<div class="lin total"><span>'+(cx.sobra<0?'Faltou':'Sobrou')+'</span><b class="'+(cx.sobra<0?'neg':'')+'">'+real(Math.abs(cx.sobra))+'</b></div>';
+  if(cx.listaAtrasadas.length){h+='<details class="atrasadasPagas"><summary>Ver as '+cx.listaAtrasadas.length+' contas atrasadas pagas neste mês</summary>';cx.listaAtrasadas.forEach(function(i){h+='<div class="lin"><span>'+esc(i.descricao)+(i.parcela&&i.parcela!=='Mensal'?' ('+esc(i.parcela)+')':'')+' <span class="sub">venceu '+ddmm(i.data)+'/'+i.data.slice(0,4)+(i.pagoEm?', paga '+ddmm(i.pagoEm):'')+'</span></span><b>'+real(i.valor)+'</b></div>'});h+='</details>'}
+  h+='</section>';
   if(d.vencidas)h+='<p class="alerta">⚠ '+d.vencidas+(d.vencidas>1?' contas vencidas':' conta vencida')+', '+real(d.vencidasValor)+'</p>';
   h+='<div class="colunas"><div>';
   var f=function(t,p){return d.itens.filter(function(i){return i.tipo===t&&i.pendente===p})};
@@ -335,17 +358,17 @@ function atualizarDepoisDeErro(){var a=avisoStatus;enviar({acao:'tudo',token:ses
 // Mesma regra do servidor, para a tela responder na hora.
 function aplicarLocal(op){
   var acha=function(id){return base.itens.filter(function(i){return i.id===id})[0]};
-  if(op.tipo==='baixar'){var b=acha(op.id);if(b){b.pendente=false;b.status=b.tipo==='Receita'?'Recebido':'Pago'}}
+  if(op.tipo==='baixar'){var b=acha(op.id);if(b){b.pendente=false;b.status=b.tipo==='Receita'?'Recebido':'Pago';b.pagoEm=hoje()}}
   else if(op.tipo==='excluir'){var e=acha(op.id);if(!e)return;base.itens=base.itens.filter(function(i){return op.escopo==='todos'&&e.serie?i.serie!==e.serie:i.id!==e.id})}
   else if(op.tipo==='editar'){
     var f=op.edicao,at=acha(f.id);if(!at)return;var v=centavos(f.valor),dia=+f.data.slice(8,10),base0=at.data;
     var alvos=f.escopo==='todos'&&at.serie?base.itens.filter(function(i){return i.serie===at.serie}):[at];
     alvos.forEach(function(i){var nova=i===at?f.data:somarMeses(f.data,mesesEntre(base0,i.data),dia);i.data=nova;i.mes=nova.slice(0,7);i.valor=v;i.descricao=f.descricao.trim()});
-    if(alvos.length===1||f.escopo!=='todos'){at.pendente=f.situacao==='pendente';at.status=at.pendente?'Pendente':(at.tipo==='Receita'?'Recebido':'Pago')}
+    if(alvos.length===1||f.escopo!=='todos'){if(at.pendente&&f.situacao!=='pendente')at.pagoEm=hoje();at.pendente=f.situacao==='pendente';at.status=at.pendente?'Pendente':(at.tipo==='Receita'?'Recebido':'Pago')}
   }else if(op.tipo==='lancar'){
     var l=op.lancamento,val=centavos(l.valor),n=l.repetir==='mensal'?12:l.repetir==='parcelado'?parseInt(l.parcelas,10):1,porP=l.valorModo==='parcela',pb=l.repetir==='parcelado'&&!porP?Math.floor(val/n):val,d0=+l.data.slice(8,10);
     for(var k=0;k<n;k++){var dt=somarMeses(l.data,k,d0),pv=l.repetir==='parcelado'&&!porP&&k===0?val-pb*(n-1):pb,fe=k===0&&l.situacao==='feito';
-      base.itens.push({id:novoId('t'),data:dt,mes:dt.slice(0,7),tipo:l.tipo,categoria:'Categorizando',descricao:l.descricao.trim(),valor:pv,pendente:!fe,status:fe?(l.tipo==='Receita'?'Recebido':'Pago'):'Pendente',parcela:l.repetir==='mensal'?'Mensal':l.repetir==='parcelado'&&n>1?(k+1)+'/'+n:'',origem:'app:'+sessao.usuario,serie:l.opId,temporario:true})}
+      base.itens.push({id:novoId('t'),data:dt,mes:dt.slice(0,7),tipo:l.tipo,categoria:'Categorizando',descricao:l.descricao.trim(),valor:pv,pendente:!fe,status:fe?(l.tipo==='Receita'?'Recebido':'Pago'):'Pendente',parcela:l.repetir==='mensal'?'Mensal':l.repetir==='parcelado'&&n>1?(k+1)+'/'+n:'',origem:'app:'+sessao.usuario,serie:l.opId,pagoEm:fe?hoje():'',temporario:true})}
   }
 }
 
