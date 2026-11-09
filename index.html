@@ -171,6 +171,11 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
       <label for="edSituacao">Situação</label>
       <select id="edSituacao"></select>
     </div>
+    <div id="caixaEdPago">
+      <label for="edPagoEm" id="edRotuloPago">Data do pagamento</label>
+      <input id="edPagoEm" type="date">
+      <p class="previa">Define em qual mês o valor entra no Caixa do mês.</p>
+    </div>
     <p class="erro" id="erroEditar" role="alert" hidden></p>
     <div class="fim"><button type="button" class="cancelar" id="edCancelar">Cancelar</button><button type="button" class="salvar" id="edSalvar">Salvar alterações</button></div>
   </form>
@@ -257,7 +262,7 @@ function variacao(a,b){if(!b)return 'Sem base no mês anterior';var v=(a-b)/b*10
 
 function itemHtml(i,hj,comAno){
   var feito=!i.pendente,sit;
-  if(feito)sit='<span class="ok">✓ '+esc((i.status||'').toLowerCase())+'</span>';
+  if(feito)sit='<span class="ok">✓ '+esc((i.status||'').toLowerCase())+(i.pagoEm?' em '+ddmm(i.pagoEm):'')+'</span>';
   else sit=i.data<hj&&i.tipo==='Despesa'?'<span class="neg">⚠ vencida</span>':(i.tipo==='Receita'?'a receber':'a pagar');
   if(i.temporario)sit+=', salvando';
   var ax=i.anexos||[],bo=ax.filter(function(a){return a.tipo==='boleto'}).length,co=ax.length-bo,rot=[];if(bo)rot.push('boleto');if(co)rot.push('comprovante');
@@ -362,7 +367,7 @@ function aplicarLocal(op){
     var f=op.edicao,at=acha(f.id);if(!at)return;var v=centavos(f.valor),dia=+f.data.slice(8,10),base0=at.data;
     var alvos=f.escopo==='todos'&&at.serie?base.itens.filter(function(i){return i.serie===at.serie}):[at];
     alvos.forEach(function(i){var nova=i===at?f.data:somarMeses(f.data,mesesEntre(base0,i.data),dia);i.data=nova;i.mes=nova.slice(0,7);i.valor=v;i.descricao=f.descricao.trim()});
-    if(alvos.length===1||f.escopo!=='todos'){if(at.pendente&&f.situacao!=='pendente')at.pagoEm=hoje();at.pendente=f.situacao==='pendente';at.status=at.pendente?'Pendente':(at.tipo==='Receita'?'Recebido':'Pago')}
+    if(alvos.length===1||f.escopo!=='todos'){if(f.situacao!=='pendente')at.pagoEm=f.pagoEm||at.pagoEm||hoje();at.pendente=f.situacao==='pendente';at.status=at.pendente?'Pendente':(at.tipo==='Receita'?'Recebido':'Pago')}
   }else if(op.tipo==='lancar'){
     var l=op.lancamento,val=centavos(l.valor),n=l.repetir==='mensal'?12:l.repetir==='parcelado'?parseInt(l.parcelas,10):1,porP=l.valorModo==='parcela',pb=l.repetir==='parcelado'&&!porP?Math.floor(val/n):val,d0=+l.data.slice(8,10);
     for(var k=0;k<n;k++){var dt=somarMeses(l.data,k,d0),pv=l.repetir==='parcelado'&&!porP&&k===0?val-pb*(n-1):pb,fe=k===0&&l.situacao==='feito';
@@ -435,19 +440,20 @@ function nomeSerie(i){return i.parcela==='Mensal'?'mensais':'parcelas'}
 function abrirEdicao(id){
   var i=acharItem(id);if(!i)return;emEdicao=i;
   $('erroEditar').hidden=true;$('edValor').value=(i.valor/100).toFixed(2).replace('.',',');$('edDescricao').value=i.descricao;$('edData').value=i.data;
-  var r=i.tipo==='Receita';$('edSituacao').innerHTML='<option value="feito">'+(r?'Recebido':'Pago')+'</option><option value="pendente">'+(r?'A receber':'A pagar')+'</option>';$('edSituacao').value=i.pendente?'pendente':'feito';
+  var r=i.tipo==='Receita';$('edSituacao').innerHTML='<option value="feito">'+(r?'Recebido':'Pago')+'</option><option value="pendente">'+(r?'A receber':'A pagar')+'</option>';$('edSituacao').value=i.pendente?'pendente':'feito';$('edPagoEm').value=i.pagoEm||(i.pendente?hoje():i.data);$('edPagoEm').max=hoje();$('edRotuloPago').textContent=r?'Data do recebimento':'Data do pagamento';
   $('caixaEscopo').hidden=!ehSerie(i);
   if(ehSerie(i)){$('edEscopo').innerHTML='<option value="todos">Todas as '+i.qtdSerie+' '+nomeSerie(i)+'</option><option value="um">Só esta'+(i.parcela&&i.parcela!=='Mensal'?' parcela ('+esc(i.parcela)+')':'')+'</option>';$('edEscopo').value='todos'}
   ajustarEscopo();$('janelaEditar').showModal();$('edValor').focus();
 }
-function ajustarEscopo(){var i=emEdicao,t=ehSerie(i)&&$('edEscopo').value==='todos';$('caixaEdSituacao').hidden=t;$('edRotuloValor').textContent=ehSerie(i)?'Valor de cada parcela':'Valor';$('edAviso').textContent=t?'Muda valor, descrição e dia de todas. A situação de cada uma não muda.':''}
-$('edEscopo').onchange=ajustarEscopo;
+function ajustarEscopo(){var i=emEdicao,t=ehSerie(i)&&$('edEscopo').value==='todos';$('caixaEdSituacao').hidden=t;$('caixaEdPago').hidden=t||$('edSituacao').value!=='feito';$('edRotuloValor').textContent=ehSerie(i)?'Valor de cada parcela':'Valor';$('edAviso').textContent=t?'Muda valor, descrição e dia de todas. A situação de cada uma não muda.':''}
+$('edEscopo').onchange=ajustarEscopo;$('edSituacao').onchange=ajustarEscopo;
 $('edCancelar').onclick=function(){$('janelaEditar').close()};
 $('edSalvar').onclick=function(){
-  var e=validar($('edValor').value,$('edDescricao').value,$('edData').value),x=$('erroEditar');
+  var e=validar($('edValor').value,$('edDescricao').value,$('edData').value),x=$('erroEditar'),pg=$('edPagoEm').value;
+  if(!e&&!$('caixaEdPago').hidden&&!(/^\d{4}-\d{2}-\d{2}$/.test(pg)&&pg<=hoje()))e='Informe a data do pagamento, que não pode ser futura.';
   if(e){x.textContent=e;x.hidden=false;return}
   $('janelaEditar').close();
-  operar({tipo:'editar',edicao:{id:emEdicao.id,escopo:ehSerie(emEdicao)?$('edEscopo').value:'um',valor:$('edValor').value,descricao:$('edDescricao').value,data:$('edData').value,situacao:$('edSituacao').value}});
+  operar({tipo:'editar',edicao:{id:emEdicao.id,escopo:ehSerie(emEdicao)?$('edEscopo').value:'um',valor:$('edValor').value,descricao:$('edDescricao').value,data:$('edData').value,situacao:$('edSituacao').value,pagoEm:$('caixaEdPago').hidden?'':pg}});
 };
 function pedirExclusao(id){
   var i=acharItem(id);if(!i)return;emExclusao=i;
@@ -486,7 +492,7 @@ function desenharDetalhe(){
   var par=i.parcela&&i.parcela!=='Mensal'?' ('+i.parcela+')':'';
   $('deTitulo').textContent=i.descricao+par;$('deValor').textContent=real(i.valor);
   var sit=i.pendente?(i.tipo==='Receita'?'A receber':(i.data<hoje()?'Vencida':'A pagar')):(i.status||'');
-  $('deInfo').textContent=ddmm(i.data)+'/'+i.data.slice(0,4)+', '+i.categoria+', '+sit;
+  $('deInfo').textContent='Vence '+ddmm(i.data)+'/'+i.data.slice(0,4)+', '+i.categoria+', '+sit+(!i.pendente&&i.pagoEm?' em '+ddmm(i.pagoEm)+'/'+i.pagoEm.slice(0,4):'');
   $('deBoletos').innerHTML=i.tipo==='Receita'?'':blocoAnexo(i,'boleto','Boleto');
   $('deComprovantes').innerHTML=blocoAnexo(i,'comprovante','Comprovante');
 }
