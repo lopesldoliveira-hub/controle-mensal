@@ -12,8 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta charset="utf-8">
 <style>
-:root{--fundo:#EDF1EE;--papel:#FAFBF9;--tinta:#16302E;--suave:#55696A;--linha:#CBD5D0;--receita:#1D6FA8;--gasto:#C2571A;--alerta:#A3261C;--campo:#FFF;--pago:#1B7A4B}
-@media (prefers-color-scheme:dark){:root{--fundo:#122120;--papel:#1A2C2B;--tinta:#E8EFEB;--suave:#A0B2AF;--linha:#35494A;--receita:#4F9BD1;--gasto:#D9763A;--alerta:#F0897F;--campo:#122120;--pago:#62D29A}}
+:root{--fundo:#EDF1EE;--papel:#FAFBF9;--tinta:#16302E;--suave:#55696A;--linha:#CBD5D0;--receita:#1D6FA8;--gasto:#C2571A;--alerta:#A3261C;--campo:#FFF;--pago:#1B7A4B;--fixo:#1D6FA8;--variavel:#C2571A;--eventual:#7A4FA3}
+@media (prefers-color-scheme:dark){:root{--fundo:#122120;--papel:#1A2C2B;--tinta:#E8EFEB;--suave:#A0B2AF;--linha:#35494A;--receita:#4F9BD1;--gasto:#D9763A;--alerta:#F0897F;--campo:#122120;--pago:#62D29A;--fixo:#4F9BD1;--variavel:#D9763A;--eventual:#9A78CC}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--fundo);color:var(--tinta);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;padding-bottom:92px}
 main{max-width:560px;margin:0 auto;padding:12px 16px}
@@ -95,6 +95,45 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 .azul{color:var(--receita)}
 .caixa .previsto{font-size:1.1rem;padding-top:8px}
 .atrasadasPagas{margin-top:6px;font-size:.9rem}.atrasadasPagas summary{cursor:pointer;color:var(--suave);padding:4px 0}
+.btnRel{padding:6px 14px;border:1px solid var(--tinta);border-radius:999px;background:var(--tinta);color:var(--papel);font-weight:600;font-size:.85rem}
+.rl-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.rl-topo select{width:auto;padding:8px 10px}
+.rl-h1{font-size:1.35rem;margin:4px 0}.rl-h2{font-size:1.1rem;margin:0 0 6px}
+.rl-frase{font-size:1.12rem;line-height:1.45;margin:10px 0 4px}.rl-frase b{white-space:nowrap}
+.rl-pos{color:var(--pago)}
+.rl-kpis{display:grid;grid-template-columns:1fr 1fr;background:var(--papel);border-radius:6px;margin-top:12px}
+.rl-kpi{padding:12px 14px;min-width:0;border-top:1px solid var(--linha)}.rl-kpi:nth-child(-n+2){border-top:0}.rl-kpi:nth-child(even){border-left:1px solid var(--linha)}
+.rl-kpi span{display:block;font-size:.82rem;color:var(--suave)}.rl-kpi b{display:block;font-size:1.15rem;white-space:nowrap}.rl-kpi small{display:block;font-size:.78rem;color:var(--suave)}
+.rl-marca{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.rl-f{background:var(--fixo)}.rl-v{background:var(--variavel)}.rl-e{background:var(--eventual)}
+.rl-cartoes{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0}
+.rl-cartao{border:1px solid var(--linha);border-radius:6px;padding:10px 12px}.rl-cartao span{display:block;font-size:.82rem;color:var(--suave)}.rl-cartao b{display:block;font-size:1.15rem}
+.rl-barra{position:relative;display:flex;gap:2px;height:20px;margin:24px 0 6px}.rl-barra>i{display:block;height:100%}
+.rl-ess{background:var(--tinta);border-radius:4px 0 0 4px}.rl-varb{border-radius:0 4px 4px 0}
+.rl-linha{position:absolute;top:-8px;bottom:-8px;width:2px;background:var(--pago)}
+.rl-linha em{position:absolute;top:-20px;left:4px;font-size:.75rem;font-style:normal;color:var(--suave);white-space:nowrap}.rl-linha.rl-fim em{left:auto;right:4px}
+.rl-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--suave);margin:6px 0}
+.rl-listas{display:grid;grid-template-columns:1fr;gap:6px;margin-top:10px}
+.rl-grupo{margin-bottom:12px}.rl-tit{display:flex;justify-content:space-between;font-weight:600;border-bottom:1px solid var(--linha);padding-bottom:3px;margin-bottom:3px}
+.rl-it{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:5px 4px;border-radius:4px;cursor:pointer;font-size:.9rem}
+.rl-it:hover,.rl-it:focus-visible{background:var(--fundo)}.rl-it small{color:var(--suave)}
+.rl-val{text-align:right;white-space:nowrap;font-weight:500}
+.rl-tr{grid-column:1/-1;height:6px;background:var(--fundo);border-radius:3px}.rl-tr i{display:block;height:100%;border-radius:3px}
+.rl-corte .rl-nome,.rl-corte .rl-val{text-decoration:line-through;color:var(--suave)}.rl-corte .rl-tr i{opacity:.25}
+.rl-pend{font-size:.75rem;color:var(--variavel);font-weight:600;margin-left:6px}
+.rl-sim{display:grid;grid-template-columns:1fr;gap:4px;margin-top:10px}.rl-sim label{margin:6px 0 0;font-weight:500}.rl-sim input{padding:0}
+.rl-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(44px,1fr);gap:4px;overflow-x:auto;padding-top:6px}
+.rl-col{display:flex;flex-direction:column;align-items:center;border:0;background:none;border-radius:4px;padding:4px 0}
+.rl-col:hover{background:var(--fundo)}.rl-col.rl-ativa{background:var(--fundo);outline:2px solid var(--tinta)}
+.rl-area{position:relative;height:140px;width:100%;display:flex;justify-content:center;align-items:flex-end;border-bottom:1px solid var(--linha)}
+.rl-pilha{width:min(22px,60%);display:flex;flex-direction:column-reverse;gap:2px;height:100%}.rl-pilha i{display:block}.rl-pilha i:last-child{border-radius:4px 4px 0 0}
+.rl-rec{position:absolute;left:12%;right:12%;height:2px;background:var(--pago)}
+.rl-col small{font-size:.72rem;color:var(--suave);margin-top:4px;line-height:1.2}.rl-col.rl-ativa small{color:var(--tinta);font-weight:600}
+.rl-rol{overflow-x:auto}.rl-tab{width:100%;border-collapse:collapse;font-size:.88rem}
+.rl-tab th,.rl-tab td{text-align:left;padding:6px;border-bottom:1px solid var(--linha);vertical-align:top}.rl-tab th{color:var(--suave);font-weight:600;font-size:.8rem}
+.rl-tab .n{text-align:right;white-space:nowrap}
+.rl-dl{font-size:.9rem;margin:8px 0 0}.rl-dl dt{font-weight:600;margin-top:8px}.rl-dl dd{margin:2px 0 0;color:var(--suave)}
+#relatorio{padding-bottom:24px}
+@media (min-width:860px){#relatorio{max-width:1000px}.rl-kpis{grid-template-columns:repeat(6,1fr)}.rl-kpi{border-top:0!important;border-left:1px solid var(--linha)}.rl-kpi:first-child{border-left:0}.rl-cartoes{grid-template-columns:repeat(3,1fr)}.rl-listas{grid-template-columns:1fr 1fr;gap:24px}.rl-sim{grid-template-columns:1fr 1fr;align-items:center}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -124,6 +163,7 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
   <section id="resultados" hidden></section>
 </div>
 <main id="tela"></main>
+<main id="relatorio" hidden></main>
 <button class="novo" id="abrir" hidden>Novo lançamento</button>
 <dialog id="janela">
   <form id="form" method="dialog" novalidate>
@@ -281,10 +321,12 @@ function grupoHtml(titulo,lista,hj,classe){
   return h+'</section>';
 }
 function desenhar(){
+  if(emRelatorio){desenharRelatorio();mostrarStatus();return}
+  $('relatorio').hidden=true;
   var d=resumo(mesAtivo),r=d.r,h='';
   $('entrada').hidden=true;$('areaBusca').hidden=false;$('tela').hidden=false;$('abrir').hidden=false;
   h+='<div class="topo"><button class="seta" data-mes="'+outroMes(d.mes,-1)+'" aria-label="Mês anterior">‹</button><h1>'+nomeMes(d.mes)+'</h1><button class="seta" data-mes="'+outroMes(d.mes,1)+'" aria-label="Próximo mês">›</button></div>';
-  h+='<p class="conta"><span>Conectado como '+esc(sessao.usuario)+'</span><button type="button" data-sair="1" class="linkbtn">Sair</button></p></p>';
+  h+='<p class="conta"><span>Conectado como '+esc(sessao.usuario)+'</span><span style="display:flex;gap:14px;align-items:center"><button type="button" class="btnRel" data-relatorio="1">Relatório</button><button type="button" data-sair="1" class="linkbtn">Sair</button></span></p></p>';
   var cx=d.caixa;
   h+='<section class="caixa"><h3>Caixa do mês</h3><p class="sub" style="margin:0 0 6px">Pelo dia em que cada conta foi paga ou recebida</p>';
   h+='<div class="lin"><span>Entrou (receitas)</span><b class="azul">'+real(cx.entrou)+'</b></div>';
@@ -317,6 +359,7 @@ function mostrarStatus(){
   if(avisoStatus&&fila.length)tentar=true;
   x.innerHTML=t?esc(t)+(tentar?' <button type="button" class="linkbtn" id="tentar">Tentar agora</button>':''):'';
   x.hidden=!t;x.className=avisoStatus?'erro':'salvando';
+  var rs=$('rlStatus');if(rs)rs.textContent=t||'';
   if(tentar)$('tentar').onclick=function(){avisoStatus='';processarFila()};
 }
 
@@ -391,7 +434,7 @@ function desenharBusca(){
 }
 
 function pedirLogin(aviso){
-  sessao.token='';gravar('cm_token','');$('tela').hidden=true;$('abrir').hidden=true;$('areaBusca').hidden=true;
+  sessao.token='';gravar('cm_token','');emRelatorio=false;$('relatorio').hidden=true;$('relatorio').innerHTML='';$('tela').hidden=true;$('abrir').hidden=true;$('areaBusca').hidden=true;
   ['janela','janelaEditar','janelaExcluir','janelaDetalhe'].forEach(function(j){if($(j).open)$(j).close()});
   $('entrada').hidden=false;$('caixaServidor').hidden=!!sessao.servidor;var x=$('erroSenha');x.textContent=aviso||'';x.hidden=!aviso;$('senha').value='';$('usuario').value=ler('cm_usuario');
   ($('usuario').value?$('senha'):sessao.servidor?$('usuario'):$('servidor')).focus();
@@ -404,6 +447,7 @@ function sair(){
 function aoClicar(ev){
   var d=ev.target.dataset;
   if(d.sair)return sair();
+  if(d.relatorio)return abrirRelatorio();
   if(d.mes){mesAtivo=d.mes;desenhar();window.scrollTo(0,0)}
   else if(d.baixar)operar({tipo:'baixar',id:d.baixar,quando:agora()});
   else if(d.editar)abrirEdicao(d.editar);
@@ -551,8 +595,157 @@ function verAnexo(id){
   }).catch(function(){erroAnexo('Não consegui abrir o arquivo. Verifique a internet e tente de novo.')});
 }
 $('deFechar').onclick=function(){fecharVisor();$('janelaDetalhe').close()};
+// ===== Relatório =====
+// Regras editáveis: listas de categorias e palavras (comparadas sem acento e em minúsculas).
+var RL={
+  recorrenteCategorias:['Salário','Reembolsos'], // receita recorrente; parcela "Mensal" também conta
+  categoriaMesCompleto:'Salário',
+  blocos:[
+    {nome:'Moradia',lado:'Essenciais',categorias:['Moradia'],palavras:['apartamento','aluguel','condominio','iptu'],inteiras:[]},
+    {nome:'Carro',lado:'Essenciais',categorias:[],palavras:['carro','veiculo','ipva','combustivel'],inteiras:[]},
+    {nome:'Água, luz, gás e internet',lado:'Essenciais',categorias:['Contas de casa','Internet e telefone'],palavras:['energia','internet','telefone'],inteiras:['agua','luz','gas']},
+    {nome:'Mercado',lado:'Essenciais',categorias:['Alimentação'],palavras:['mercado','atacad','supermerc','feira','acougue'],inteiras:[]},
+    {nome:'Cartões',lado:'Variáveis',categorias:['Cartão de crédito'],palavras:['cartao'],inteiras:[]},
+    {nome:'Empréstimos e acordos',lado:'Variáveis',categorias:['Dívidas e parcelas'],palavras:['emprestimo','acordo'],inteiras:[]}
+  ],
+  restante:'Compras e outros'
+};
+var emRelatorio=false,rlMes='',rlCortes={},rlRedVar=0,rlRedEve=0;
+var MES_CURTO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function mesCurto(m){return MES_CURTO[+m.slice(5,7)-1]+'/'+m.slice(2,4)}
+function rlN(t){return normalizar(t||'').replace(/\s+/g,' ').trim()}
+function rlNat(i){return i.natureza==='Fixa'?'Fixo':i.natureza==='Variável'?'Variável':'Eventual'}
+function rlClasse(i){var n=rlNat(i);return n==='Fixo'?'rl-f':n==='Variável'?'rl-v':'rl-e'}
+function rlBloco(i){
+  var c=rlN(i.categoria),d=rlN(i.descricao);
+  for(var k=0;k<RL.blocos.length;k++){var b=RL.blocos[k];
+    if(b.categorias.some(function(x){return rlN(x)===c})||b.palavras.some(function(p){return d.indexOf(p)>=0})||b.inteiras.some(function(p){return new RegExp('\\b'+p+'\\b').test(d)}))return b.nome}
+  return RL.restante;
+}
+function rlRecorrente(i){return RL.recorrenteCategorias.some(function(x){return rlN(x)===rlN(i.categoria)})||(i.parcela||'').trim()==='Mensal'}
+function rlCompleto(m){var a=rlN(RL.categoriaMesCompleto);return base.itens.some(function(i){return i.mes===m&&i.tipo==='Receita'&&rlN(i.categoria)===a})}
+function rlMeses(){var s={};base.itens.forEach(function(i){s[i.mes]=1});return Object.keys(s).sort()}
+function rlPadrao(){var at=hoje().slice(0,7);if(rlCompleto(at))return at;var c=rlMeses().filter(function(m){return m<=at&&rlCompleto(m)});return c.length?c[c.length-1]:at}
+function rlPct(p,t){return t?Math.round(p*1000/t)/10:null}
+function rlPctTxt(v){return v===null?'sem receita':String(v.toFixed(1)).replace('.',',')+'%'}
+function rlTot(m){
+  var t={receita:0,recorrente:0,Fixo:0,'Variável':0,Eventual:0,aPagar:0};
+  base.itens.forEach(function(i){if(i.mes!==m)return;
+    if(i.tipo==='Receita'){t.receita+=i.valor;if(rlRecorrente(i))t.recorrente+=i.valor}
+    else{t[rlNat(i)]+=i.valor;if(i.pendente)t.aPagar+=i.valor}});
+  t.avulsa=t.receita-t.recorrente;t.despesas=t.Fixo+t['Variável']+t.Eventual;t.saldo=t.receita-t.despesas;t.saldoRec=t.recorrente-t.despesas;t.comprometida=rlPct(t.despesas,t.receita);
+  return t;
+}
+function rlCor(v){return v<0?'neg':'rl-pos'}
+function rlNome(i){return esc(i.descricao)+(i.parcela&&i.parcela!=='Mensal'?' ('+esc(i.parcela)+')':'')}
+function rlItem(i,maior,comNat){
+  var c=rlCortes[i.id]?' rl-corte':'';
+  return '<div class="rl-it'+c+'" data-rlid="'+esc(i.id)+'" tabindex="0" role="button" aria-pressed="'+(!!rlCortes[i.id])+'"><span class="rl-nome">'+rlNome(i)+(comNat?' <small>'+rlNat(i)+'</small>':'')+(i.pendente?'<span class="rl-pend">pendente</span>':'')+'</span><span class="rl-val">'+real(i.valor)+'</span><span class="rl-tr"><i class="'+rlClasse(i)+'" style="width:'+(i.valor/maior*100).toFixed(2)+'%"></i></span></div>';
+}
+function abrirRelatorio(){emRelatorio=true;rlMes=rlPadrao();rlCortes={};rlRedVar=0;rlRedEve=0;if(location.hash!=='#relatorio')history.pushState(null,'','#relatorio');desenhar();window.scrollTo(0,0);if(!fila.length)atualizar()}
+function fecharRelatorio(){emRelatorio=false;if(location.hash==='#relatorio')history.pushState(null,'',location.pathname+location.search);desenhar();window.scrollTo(0,0)}
+window.addEventListener('popstate',function(){var q=location.hash==='#relatorio';if(q!==emRelatorio&&sessao.token){if(q){emRelatorio=true;rlMes=rlPadrao();rlCortes={}}else emRelatorio=false;desenhar()}});
+function desenharRelatorio(){
+  $('entrada').hidden=true;$('areaBusca').hidden=true;$('tela').hidden=true;$('abrir').hidden=true;$('relatorio').hidden=false;
+  var m=rlMes,t=rlTot(m),hj=hoje(),h='';
+  var gastos=base.itens.filter(function(i){return i.mes===m&&i.tipo==='Despesa'}).sort(function(a,b){return b.valor-a.valor||String(a.descricao).localeCompare(b.descricao)});
+  var maior=gastos.length?gastos[0].valor:1;
+  h+='<div class="rl-topo"><button type="button" class="linkbtn" data-rlvoltar="1">‹ Voltar</button><label class="oculto" for="rlSel">Mês</label><select id="rlSel">';
+  var ms=rlMeses();if(ms.indexOf(m)<0)ms.push(m);ms.sort().reverse().forEach(function(x){h+='<option value="'+x+'"'+(x===m?' selected':'')+'>'+mesCurto(x)+(rlCompleto(x)?'':' (parcial)')+'</option>'});
+  h+='</select></div><h1 class="rl-h1">Relatório de '+mesCurto(m)+(rlCompleto(m)?'':' (parcial)')+'</h1><p class="sub" id="rlStatus"></p>';
+  if(!rlCompleto(m))h+='<p class="alerta">Este mês ainda não tem salário lançado. Os números mostram só as parcelas e contas recorrentes já lançadas.</p>';
+  h+='<p class="rl-frase">Em '+mesCurto(m)+' entraram <b>'+real(t.receita)+'</b> e saíram <b>'+real(t.despesas)+'</b>, e o mês fecha em <b class="'+rlCor(t.saldo)+'">'+real(t.saldo)+'</b>. Gastos variáveis e eventuais somam <b>'+real(t['Variável']+t.Eventual)+'</b>.</p>';
+  if(t.avulsa>0)h+='<p class="sub">Sem a receita avulsa de '+real(t.avulsa)+', o mês fecharia em <b class="'+rlCor(t.saldoRec)+'">'+real(t.saldoRec)+'</b>.</p>';
+  h+='<div class="rl-kpis">';
+  h+='<div class="rl-kpi"><span>Receita</span><b>'+real(t.receita)+'</b><small>Recorrente '+real(t.recorrente)+'</small></div>';
+  [['Fixo','Gasto fixo','rl-f'],['Variável','Gasto variável','rl-v'],['Eventual','Gasto eventual','rl-e']].forEach(function(k){h+='<div class="rl-kpi"><span><i class="rl-marca '+k[2]+'"></i>'+k[1]+'</span><b>'+real(t[k[0]])+'</b><small>'+rlPctTxt(rlPct(t[k[0]],t.receita))+' da receita</small></div>'});
+  h+='<div class="rl-kpi"><span>Saldo do mês</span><b class="'+rlCor(t.saldo)+'">'+real(t.saldo)+'</b><small>Recorrente '+real(t.saldoRec)+'</small></div>';
+  h+='<div class="rl-kpi"><span>Receita comprometida</span><b class="'+(t.comprometida>100?'neg':'')+'">'+rlPctTxt(t.comprometida)+'</b><small>Ainda a pagar '+real(t.aPagar)+'</small></div></div>';
+
+  // Essenciais x variáveis
+  var blocos={};RL.blocos.concat([{nome:RL.restante,lado:'Variáveis'}]).forEach(function(b){blocos[b.nome]={nome:b.nome,lado:b.lado,total:0,itens:[]}});
+  gastos.forEach(function(i){var b=blocos[rlBloco(i)];b.total+=i.valor;b.itens.push(i)});
+  var lado=function(n){var bs=Object.keys(blocos).map(function(k){return blocos[k]}).filter(function(b){return b.lado===n});var tt=bs.reduce(function(s,b){return s+b.total},0);return {blocos:bs,total:tt,pct:rlPct(tt,t.recorrente)}};
+  var E=lado('Essenciais'),V=lado('Variáveis'),sobra=t.recorrente-E.total,esc2=Math.max(t.despesas,t.recorrente,1),dif=t.recorrente-t.despesas,lin=t.recorrente/esc2*100;
+  h+='<section><h2 class="rl-h2">Essenciais x variáveis</h2><p>As essenciais levaram <b>'+rlPctTxt(E.pct)+'</b> da receita recorrente e sobraram <b class="'+rlCor(sobra)+'">'+real(sobra)+'</b> para todo o resto. Cartões, empréstimos e compras somaram <b>'+real(V.total)+'</b>.</p>';
+  h+='<div class="rl-cartoes"><div class="rl-cartao"><span>Essenciais</span><b>'+real(E.total)+'</b><span>'+rlPctTxt(E.pct)+' da receita recorrente</span></div><div class="rl-cartao"><span>Variáveis</span><b>'+real(V.total)+'</b><span>'+rlPctTxt(V.pct)+' da receita recorrente</span></div><div class="rl-cartao"><span>Sobra depois das essenciais</span><b class="'+rlCor(sobra)+'">'+real(sobra)+'</b><span>Teto para cartões, empréstimos e compras</span></div></div>';
+  h+='<div class="rl-barra" role="img" aria-label="Essenciais '+real(E.total)+' e variáveis '+real(V.total)+' comparados à receita recorrente de '+real(t.recorrente)+'"><i class="rl-ess" style="width:'+(E.total/esc2*100).toFixed(2)+'%"></i><i class="rl-v rl-varb" style="width:'+(V.total/esc2*100).toFixed(2)+'%"></i><span class="rl-linha'+(lin>55?' rl-fim':'')+'" style="left:'+lin.toFixed(2)+'%"><em>Receita recorrente</em></span></div>';
+  h+='<div class="rl-leg"><span><i class="rl-marca" style="background:var(--tinta)"></i>Essenciais</span><span><i class="rl-marca rl-v"></i>Variáveis</span><span><i class="rl-marca" style="background:var(--pago);width:3px"></i>Receita recorrente</span></div>';
+  h+='<p class="sub">'+(dif<0?'As contas passam da receita recorrente em <b class="neg">'+real(-dif)+'</b>.':'Sobram <b class="rl-pos">'+real(dif)+'</b> da receita recorrente.')+'</p><div class="rl-listas">';
+  [[E,'Essenciais para manter a casa'],[V,'Variáveis']].forEach(function(p){h+='<div><h3>'+p[1]+'</h3>';p[0].blocos.forEach(function(b){h+='<div class="rl-grupo"><div class="rl-tit"><span>'+esc(b.nome)+'</span><span>'+real(b.total)+'</span></div>';if(!b.itens.length)h+='<p class="sub">Nenhum gasto.</p>';b.itens.forEach(function(i){h+=rlItem(i,maior,false)});h+='</div>'});h+='</div>'});
+  h+='</div></section>';
+
+  // Ranking
+  h+='<section><h2 class="rl-h2">Para onde foi o dinheiro</h2><p class="sub">Toque em um gasto para simular o corte. Nada é alterado nos seus dados.</p><div class="rl-leg"><span><i class="rl-marca rl-f"></i>Fixo</span><span><i class="rl-marca rl-v"></i>Variável</span><span><i class="rl-marca rl-e"></i>Eventual</span></div>';
+  if(!gastos.length)h+='<p class="sub">Nenhum gasto neste mês.</p>';
+  gastos.forEach(function(i){h+=rlItem(i,maior,true)});h+='</section>';
+
+  // Simulador
+  h+='<section><h2 class="rl-h2">Simulador de corte</h2><p class="sub">Só simulação. Os percentuais valem para os gastos não marcados.</p><div class="rl-sim"><label for="rlVar">Reduzir gastos variáveis em <b id="rlTxV"></b></label><input id="rlVar" type="range" min="0" max="50" step="5" value="'+rlRedVar+'"><label for="rlEve">Reduzir gastos eventuais restantes em <b id="rlTxE"></b></label><input id="rlEve" type="range" min="0" max="100" step="5" value="'+rlRedEve+'"></div>';
+  h+='<div class="rl-cartoes" aria-live="polite"><div class="rl-cartao"><span>Gastos marcados</span><b id="rlQ"></b><span id="rlQV"></span></div><div class="rl-cartao"><span>Economia simulada</span><b id="rlEco"></b></div><div class="rl-cartao"><span>Novo saldo do mês</span><b id="rlNS"></b></div></div><button type="button" class="cancelar" data-rllimpar="1">Limpar simulação</button></section>';
+
+  // Mês a mês
+  var hist=rlMeses().slice(-18).map(function(x){var o=rlTot(x);o.mes=x;return o}),esc3=Math.max.apply(null,hist.map(function(o){return Math.max(o.despesas,o.receita)}).concat([1]));
+  h+='<section><h2 class="rl-h2">Mês a mês</h2><div class="rl-leg"><span><i class="rl-marca rl-f"></i>Fixo</span><span><i class="rl-marca rl-v"></i>Variável</span><span><i class="rl-marca rl-e"></i>Eventual</span><span><i class="rl-marca" style="background:var(--pago);height:3px"></i>Receita do mês</span></div><div class="rl-cols">';
+  hist.forEach(function(o){h+='<button type="button" class="rl-col'+(o.mes===m?' rl-ativa':'')+'" data-rlmes="'+o.mes+'" title="'+mesCurto(o.mes)+': receita '+real(o.receita)+', fixo '+real(o.Fixo)+', variável '+real(o['Variável'])+', eventual '+real(o.Eventual)+'"><span class="rl-area"><span class="rl-pilha">';
+    [['Fixo','rl-f'],['Variável','rl-v'],['Eventual','rl-e']].forEach(function(k){if(o[k[0]])h+='<i class="'+k[1]+'" style="height:'+(o[k[0]]/esc3*100).toFixed(2)+'%"></i>'});
+    h+='</span>'+(o.receita?'<span class="rl-rec" style="bottom:'+(o.receita/esc3*100).toFixed(2)+'%"></span>':'')+'</span><small>'+mesCurto(o.mes)+(rlCompleto(o.mes)?'':'<br>parcial')+'</small></button>'});
+  h+='</div></section>';
+
+  // Parcelas e recorrentes em aberto
+  var gr={};base.itens.forEach(function(i){var p=(i.parcela||'').trim();if(i.tipo!=='Despesa'||!(p==='Mensal'||/^\d+\s*\/\s*\d+$/.test(p)))return;var k=i.serie||rlN(i.descricao)+'|'+p.split('/').pop();(gr[k]=gr[k]||[]).push(i)});
+  var par=[];Object.keys(gr).forEach(function(k){var l=gr[k],pe=l.filter(function(i){return i.pendente}).sort(porData);if(!pe.length)return;var mensal=(l[0].parcela||'').trim()==='Mensal';
+    par.push({d:l[0].descricao,tipo:mensal?'Mensal':'Parcelado',nat:rlNat(l[0]),vm:pe[0].valor,f:pe.length,tot:pe.reduce(function(s,i){return s+i.valor},0),fim:l.reduce(function(s,i){return i.mes>s?i.mes:s},'')})});
+  par.sort(function(a,b){return a.fim<b.fim?-1:a.fim>b.fim?1:String(a.d).localeCompare(b.d)});
+  var pp=par.filter(function(g){return g.tipo==='Parcelado'}),falta=pp.reduce(function(s,g){return s+g.tot},0);
+  h+='<section><h2 class="rl-h2">Parcelas e recorrentes em aberto</h2><p>Faltam <b>'+real(falta)+'</b> em '+pp.length+(pp.length===1?' compra parcelada':' compras parceladas')+', sem contar as contas mensais.</p>';
+  if(par.length){h+='<div class="rl-rol"><table class="rl-tab"><tr><th>Descrição</th><th>Tipo</th><th>Natureza</th><th class="n">Valor/mês</th><th class="n">Faltam</th><th class="n">Total a pagar</th><th class="n">Termina</th></tr>';par.forEach(function(g){h+='<tr><td>'+esc(g.d)+'</td><td>'+g.tipo+'</td><td>'+g.nat+'</td><td class="n">'+real(g.vm)+'</td><td class="n">'+g.f+'</td><td class="n">'+real(g.tot)+'</td><td class="n">'+mesCurto(g.fim)+'</td></tr>'});h+='</table></div>'}
+  else h+='<p class="sub">Nenhuma parcela em aberto.</p>';h+='</section>';
+
+  // Vencidas
+  var ven=base.itens.filter(function(i){return i.tipo==='Despesa'&&i.pendente&&i.data<hj}).sort(porData),vt=ven.reduce(function(s,i){return s+i.valor},0),dh=Date.UTC(+hj.slice(0,4),+hj.slice(5,7)-1,+hj.slice(8,10));
+  h+='<section><h2 class="rl-h2">Vencidas e ainda pendentes</h2><p>'+ven.length+(ven.length===1?' lançamento vencido':' lançamentos vencidos')+' em '+ddmm(hj)+'/'+hj.slice(0,4)+', total <b class="'+(ven.length?'neg':'')+'">'+real(vt)+'</b>.</p>';
+  if(ven.length){h+='<div class="rl-rol"><table class="rl-tab"><tr><th>Vencimento</th><th>Descrição</th><th>Competência</th><th class="n">Valor</th><th class="n">Dias de atraso</th></tr>';ven.forEach(function(i){var di=Math.round((dh-Date.UTC(+i.data.slice(0,4),+i.data.slice(5,7)-1,+i.data.slice(8,10)))/86400000);h+='<tr><td>'+ddmm(i.data)+'/'+i.data.slice(0,4)+'</td><td>'+rlNome(i)+'</td><td>'+mesCurto(i.mes)+'</td><td class="n">'+real(i.valor)+'</td><td class="n">'+di+'</td></tr>'});h+='</table></div>'}
+  h+='</section>';
+
+  h+='<section><details><summary><b>Como os números são calculados</b></summary><dl class="rl-dl">'+
+    '<dt>Mês</dt><dd>Sempre o mês de competência do lançamento, não a data de pagamento.</dd>'+
+    '<dt>Receita recorrente</dt><dd>Receitas de categoria Salário ou Reembolsos, ou com parcela "Mensal". As demais são receita avulsa.</dd>'+
+    '<dt>Gasto fixo, variável e eventual</dt><dd>Soma das despesas pela natureza gravada no lançamento. Qualquer natureza diferente de Fixa ou Variável conta como Eventual.</dd>'+
+    '<dt>Saldo do mês</dt><dd>Receita menos despesas. O saldo recorrente usa só a receita recorrente.</dd>'+
+    '<dt>Receita comprometida</dt><dd>Despesas divididas pela receita, vezes 100, com uma casa decimal.</dd>'+
+    '<dt>Ainda a pagar</dt><dd>Despesas do mês com situação pendente.</dd>'+
+    '<dt>Mês completo</dt><dd>Mês com pelo menos uma receita de categoria Salário. Os demais aparecem como parcial.</dd>'+
+    '<dt>Essenciais</dt><dd>Moradia, carro, água, luz, gás e internet, e mercado, checados nessa ordem pela categoria ou por palavras da descrição. Percentuais sobre a receita recorrente.</dd>'+
+    '<dt>Variáveis</dt><dd>Tudo o que não é essencial: cartões, empréstimos e acordos, e compras e outros.</dd>'+
+    '<dt>Sobra depois das essenciais</dt><dd>Receita recorrente menos essenciais. É o teto para cartões, empréstimos e compras.</dd>'+
+    '<dt>Parcelas em aberto</dt><dd>Despesas com parcela "n/N" ou "Mensal" que ainda têm parcelas pendentes, agrupadas pela compra.</dd>'+
+    '<dt>Vencidas</dt><dd>Despesas pendentes com vencimento anterior a hoje.</dd></dl></details></section>';
+
+  $('relatorio').innerHTML=h;
+  $('rlSel').onchange=function(){rlMes=this.value;rlCortes={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0)};
+  ['rlVar','rlEve'].forEach(function(id){$(id).oninput=function(){rlRedVar=+$('rlVar').value;rlRedEve=+$('rlEve').value;rlSimular(t.saldo,gastos)}});
+  rlSimular(t.saldo,gastos);
+}
+function rlSimular(saldo,gastos){
+  var q=0,mv=0,eco=0;
+  gastos.forEach(function(i){if(rlCortes[i.id]){q++;mv+=i.valor;eco+=i.valor}else if(rlNat(i)==='Variável')eco+=i.valor*rlRedVar/100;else if(rlNat(i)==='Eventual')eco+=i.valor*rlRedEve/100});
+  eco=Math.round(eco);var ns=saldo+eco;
+  $('rlTxV').textContent=rlRedVar+'%';$('rlTxE').textContent=rlRedEve+'%';$('rlQ').textContent=q;$('rlQV').textContent=real(mv);$('rlEco').textContent=real(eco);$('rlNS').textContent=real(ns);$('rlNS').className=rlCor(ns);
+}
+$('relatorio').onclick=function(ev){
+  var el=ev.target.closest('[data-rlid],[data-rlmes],[data-rlvoltar],[data-rllimpar]');if(!el)return;var d=el.dataset;
+  if(d.rlvoltar)return fecharRelatorio();
+  if(d.rlmes){rlMes=d.rlmes;rlCortes={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0);return}
+  if(d.rllimpar){rlCortes={};rlRedVar=0;rlRedEve=0;desenharRelatorio();return}
+  if(d.rlid){rlCortes[d.rlid]=!rlCortes[d.rlid];var on=!!rlCortes[d.rlid];document.querySelectorAll('.rl-it[data-rlid="'+d.rlid.replace(/"/g,'')+'"]').forEach(function(e){e.classList.toggle('rl-corte',on);e.setAttribute('aria-pressed',on)});
+    var g=base.itens.filter(function(i){return i.mes===rlMes&&i.tipo==='Despesa'});rlSimular(rlTot(rlMes).saldo,g)}
+};
+$('relatorio').onkeydown=function(ev){if((ev.key==='Enter'||ev.key===' ')&&ev.target.dataset&&ev.target.dataset.rlid){ev.preventDefault();ev.target.click()}};
+
 function iniciarTela(){
   mesAtivo=mesAtivo||hoje().slice(0,7);
+  if(location.hash==='#relatorio'&&!emRelatorio){emRelatorio=true;rlMes=rlPadrao()}
   $('entrada').hidden=true;$('areaBusca').hidden=false;$('tela').hidden=false;$('abrir').hidden=false;
   if(temDados)desenhar();else if(!avisoStatus)$('tela').innerHTML='<p class="vazio">Carregando pela primeira vez...</p>';
   if(fila.length)processarFila();else atualizar();
