@@ -133,6 +133,11 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 .rl-tab .n{text-align:right;white-space:nowrap}
 .rl-dl{font-size:.9rem;margin:8px 0 0}.rl-dl dt{font-weight:600;margin-top:8px}.rl-dl dd{margin:2px 0 0;color:var(--suave)}
 #relatorio{padding-bottom:24px}
+.rl-somaTopo{display:flex;gap:18px;margin:6px 0;font-size:.88rem}
+.rl-fx{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--linha);font-weight:400;margin:0;cursor:pointer}
+.rl-fx input{width:20px;height:20px;padding:0;accent-color:var(--fixo)}.rl-fx b{white-space:nowrap}
+.rl-fx:has(input:not(:checked)) span,.rl-fx:has(input:not(:checked)) b{color:var(--suave);text-decoration:line-through}
+.rl-somaFim{display:flex;justify-content:space-between;gap:10px;padding-top:10px;font-weight:600}.rl-somaFim b{font-size:1.15rem;color:var(--fixo)}
 @media (min-width:860px){#relatorio{max-width:1000px}.rl-kpis{grid-template-columns:repeat(6,1fr)}.rl-kpi{border-top:0!important;border-left:1px solid var(--linha)}.rl-kpi:first-child{border-left:0}.rl-cartoes{grid-template-columns:repeat(3,1fr)}.rl-listas{grid-template-columns:1fr 1fr;gap:24px}.rl-sim{grid-template-columns:1fr 1fr;align-items:center}}
 [hidden]{display:none!important}
 </style>
@@ -608,13 +613,19 @@ var RL={
     {nome:'Cartões',lado:'Variáveis',categorias:['Cartão de crédito'],palavras:['cartao'],inteiras:[]},
     {nome:'Empréstimos e acordos',lado:'Variáveis',categorias:['Dívidas e parcelas'],palavras:['emprestimo','acordo'],inteiras:[]}
   ],
-  restante:'Compras e outros'
+  restante:'Compras e outros',
+  // Contam sempre como gasto fixo, mesmo que tenham sido lançadas com outra natureza.
+  sempreFixos:{blocos:['Moradia','Água, luz, gás e internet','Mercado'],palavras:['parcela carro','parcela do carro','prestacao carro','financiamento carro']}
 };
+var rlFixFora={};
 var emRelatorio=false,rlMes='',rlCortes={},rlRedVar=0,rlRedEve=0;
 var MES_CURTO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 function mesCurto(m){return MES_CURTO[+m.slice(5,7)-1]+'/'+m.slice(2,4)}
 function rlN(t){return normalizar(t||'').replace(/\s+/g,' ').trim()}
-function rlNat(i){return i.natureza==='Fixa'?'Fixo':i.natureza==='Variável'?'Variável':'Eventual'}
+function rlNat(i){
+  if(i.tipo==='Despesa'&&(RL.sempreFixos.blocos.indexOf(rlBloco(i))>=0||RL.sempreFixos.palavras.some(function(p){return rlN(i.descricao).indexOf(p)>=0})))return 'Fixo';
+  return i.natureza==='Fixa'?'Fixo':i.natureza==='Variável'?'Variável':'Eventual';
+}
 function rlClasse(i){var n=rlNat(i);return n==='Fixo'?'rl-f':n==='Variável'?'rl-v':'rl-e'}
 function rlBloco(i){
   var c=rlN(i.categoria),d=rlN(i.descricao);
@@ -661,6 +672,18 @@ function desenharRelatorio(){
   [['Fixo','Gasto fixo','rl-f'],['Variável','Gasto variável','rl-v'],['Eventual','Gasto eventual','rl-e']].forEach(function(k){h+='<div class="rl-kpi"><span><i class="rl-marca '+k[2]+'"></i>'+k[1]+'</span><b>'+real(t[k[0]])+'</b><small>'+rlPctTxt(rlPct(t[k[0]],t.receita))+' da receita</small></div>'});
   h+='<div class="rl-kpi"><span>Saldo do mês</span><b class="'+rlCor(t.saldo)+'">'+real(t.saldo)+'</b><small>Recorrente '+real(t.saldoRec)+'</small></div>';
   h+='<div class="rl-kpi"><span>Receita comprometida</span><b class="'+(t.comprometida>100?'neg':'')+'">'+rlPctTxt(t.comprometida)+'</b><small>Ainda a pagar '+real(t.aPagar)+'</small></div></div>';
+
+  // Contas fixas: lista para marcar e somar
+  var fixas=gastos.filter(function(i){return rlNat(i)==='Fixo'}).sort(porData);
+  var medias=rlMeses().filter(function(x){return x<m&&rlCompleto(x)}).slice(-3).map(function(x){return rlTot(x).Fixo});
+  h+='<section id="rlFixas"><h2 class="rl-h2">Contas fixas do mês</h2><p class="sub">Toque para marcar ou desmarcar e ver a soma.'+(medias.length?' Média dos '+(medias.length>1?medias.length+' meses completos anteriores':'mês completo anterior')+': <b>'+real(Math.round(medias.reduce(function(s,v){return s+v},0)/medias.length))+'</b>.':'')+'</p>';
+  if(!fixas.length)h+='<p class="sub">Nenhuma conta fixa neste mês.</p>';
+  else{
+    h+='<div class="rl-somaTopo"><button type="button" class="linkbtn" data-rlfix="todas">Marcar todas</button><button type="button" class="linkbtn" data-rlfix="nenhuma">Desmarcar todas</button></div>';
+    fixas.forEach(function(i){h+='<label class="rl-fx"><input type="checkbox" data-rlfixid="'+esc(i.id)+'"'+(rlFixFora[i.id]?'':' checked')+'><span>'+ddmm(i.data)+' '+rlNome(i)+(i.pendente?'<span class="rl-pend">pendente</span>':'')+'</span><b>'+real(i.valor)+'</b></label>'});
+    h+='<div class="rl-somaFim" aria-live="polite"><span id="rlFixQ"></span><b id="rlFixT"></b></div>';
+  }
+  h+='</section>';
 
   // Essenciais x variáveis
   var blocos={};RL.blocos.concat([{nome:RL.restante,lado:'Variáveis'}]).forEach(function(b){blocos[b.nome]={nome:b.nome,lado:b.lado,total:0,itens:[]}});
@@ -711,7 +734,7 @@ function desenharRelatorio(){
   h+='<section><details><summary><b>Como os números são calculados</b></summary><dl class="rl-dl">'+
     '<dt>Mês</dt><dd>Sempre o mês de competência do lançamento, não a data de pagamento.</dd>'+
     '<dt>Receita recorrente</dt><dd>Receitas de categoria Salário ou Reembolsos, ou com parcela "Mensal". As demais são receita avulsa.</dd>'+
-    '<dt>Gasto fixo, variável e eventual</dt><dd>Soma das despesas pela natureza gravada no lançamento. Qualquer natureza diferente de Fixa ou Variável conta como Eventual.</dd>'+
+    '<dt>Gasto fixo, variável e eventual</dt><dd>Soma das despesas pela natureza gravada no lançamento. Qualquer natureza diferente de Fixa ou Variável conta como Eventual. Moradia, água, luz, gás, internet, mercado e parcela do carro contam sempre como fixos.</dd>'+
     '<dt>Saldo do mês</dt><dd>Receita menos despesas. O saldo recorrente usa só a receita recorrente.</dd>'+
     '<dt>Receita comprometida</dt><dd>Despesas divididas pela receita, vezes 100, com uma casa decimal.</dd>'+
     '<dt>Ainda a pagar</dt><dd>Despesas do mês com situação pendente.</dd>'+
@@ -723,9 +746,16 @@ function desenharRelatorio(){
     '<dt>Vencidas</dt><dd>Despesas pendentes com vencimento anterior a hoje.</dd></dl></details></section>';
 
   $('relatorio').innerHTML=h;
-  $('rlSel').onchange=function(){rlMes=this.value;rlCortes={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0)};
+  $('rlSel').onchange=function(){rlMes=this.value;rlCortes={};rlFixFora={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0)};
   ['rlVar','rlEve'].forEach(function(id){$(id).oninput=function(){rlRedVar=+$('rlVar').value;rlRedEve=+$('rlEve').value;rlSimular(t.saldo,gastos)}});
   rlSimular(t.saldo,gastos);
+  rlSomarFixas();
+}
+function rlSomarFixas(){
+  var caixas=[].slice.call(document.querySelectorAll('[data-rlfixid]'));if(!caixas.length)return;
+  var mapa={};base.itens.forEach(function(i){mapa[i.id]=i});
+  var sel=caixas.filter(function(c){return c.checked}),tot=sel.reduce(function(s,c){return s+(mapa[c.dataset.rlfixid]?mapa[c.dataset.rlfixid].valor:0)},0);
+  $('rlFixQ').textContent=sel.length+' de '+caixas.length+' contas selecionadas';$('rlFixT').textContent=real(tot);
 }
 function rlSimular(saldo,gastos){
   var q=0,mv=0,eco=0;
@@ -734,9 +764,11 @@ function rlSimular(saldo,gastos){
   $('rlTxV').textContent=rlRedVar+'%';$('rlTxE').textContent=rlRedEve+'%';$('rlQ').textContent=q;$('rlQV').textContent=real(mv);$('rlEco').textContent=real(eco);$('rlNS').textContent=real(ns);$('rlNS').className=rlCor(ns);
 }
 $('relatorio').onclick=function(ev){
-  var el=ev.target.closest('[data-rlid],[data-rlmes],[data-rlvoltar],[data-rllimpar]');if(!el)return;var d=el.dataset;
+  if(ev.target.dataset&&ev.target.dataset.rlfixid){rlFixFora[ev.target.dataset.rlfixid]=!ev.target.checked;rlSomarFixas();return}
+  var el=ev.target.closest('[data-rlid],[data-rlmes],[data-rlvoltar],[data-rllimpar],[data-rlfix]');if(!el)return;var d=el.dataset;
+  if(d.rlfix){var on=d.rlfix==='todas';document.querySelectorAll('[data-rlfixid]').forEach(function(c){c.checked=on;rlFixFora[c.dataset.rlfixid]=!on});rlSomarFixas();return}
   if(d.rlvoltar)return fecharRelatorio();
-  if(d.rlmes){rlMes=d.rlmes;rlCortes={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0);return}
+  if(d.rlmes){rlMes=d.rlmes;rlCortes={};rlFixFora={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0);return}
   if(d.rllimpar){rlCortes={};rlRedVar=0;rlRedEve=0;desenharRelatorio();return}
   if(d.rlid){rlCortes[d.rlid]=!rlCortes[d.rlid];var on=!!rlCortes[d.rlid];document.querySelectorAll('.rl-it[data-rlid="'+d.rlid.replace(/"/g,'')+'"]').forEach(function(e){e.classList.toggle('rl-corte',on);e.setAttribute('aria-pressed',on)});
     var g=base.itens.filter(function(i){return i.mes===rlMes&&i.tipo==='Despesa'});rlSimular(rlTot(rlMes).saldo,g)}
