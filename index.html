@@ -135,7 +135,9 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 .rl-tab th,.rl-tab td{text-align:left;padding:6px;border-bottom:1px solid var(--linha);vertical-align:top}.rl-tab th{color:var(--suave);font-weight:600;font-size:.8rem}
 .rl-tab .n{text-align:right;white-space:nowrap}
 .rl-dl{font-size:.9rem;margin:8px 0 0}.rl-dl dt{font-weight:600;margin-top:8px}.rl-dl dd{margin:2px 0 0;color:var(--suave)}
-#relatorio{padding-bottom:24px}
+#relatorio{padding-bottom:90px}
+.rl-tocar{cursor:pointer;border-radius:4px}.rl-tocar:hover,.rl-tocar:focus-visible{background:var(--fundo)}
+.rl-listas h3.rl-tocar::after{content:' (toque para selecionar todas)';font-weight:400;font-size:.8rem;color:var(--suave)}
 @media (min-width:860px){#relatorio{max-width:1000px}.rl-kpis{grid-template-columns:repeat(6,1fr)}.rl-kpi{border-top:0!important;border-left:1px solid var(--linha)}.rl-kpi:first-child{border-left:0}.rl-cartoes{grid-template-columns:repeat(3,1fr)}.rl-listas{grid-template-columns:1fr 1fr;gap:24px}.rl-sim{grid-template-columns:1fr 1fr;align-items:center}}
 [hidden]{display:none!important}
 </style>
@@ -681,11 +683,11 @@ function desenharRelatorio(){
   h+='<div class="rl-barra" role="img" aria-label="Essenciais '+real(E.total)+' e variáveis '+real(V.total)+' comparados à receita recorrente de '+real(t.recorrente)+'"><i class="rl-ess" style="width:'+(E.total/esc2*100).toFixed(2)+'%"></i><i class="rl-v rl-varb" style="width:'+(V.total/esc2*100).toFixed(2)+'%"></i><span class="rl-linha'+(lin>55?' rl-fim':'')+'" style="left:'+lin.toFixed(2)+'%"><em>Receita recorrente</em></span></div>';
   h+='<div class="rl-leg"><span><i class="rl-marca" style="background:var(--tinta)"></i>Essenciais</span><span><i class="rl-marca rl-v"></i>Variáveis</span><span><i class="rl-marca" style="background:var(--pago);width:3px"></i>Receita recorrente</span></div>';
   h+='<p class="sub">'+(dif<0?'As contas passam da receita recorrente em <b class="neg">'+real(-dif)+'</b>.':'Sobram <b class="rl-pos">'+real(dif)+'</b> da receita recorrente.')+'</p><div class="rl-listas">';
-  [[E,'Essenciais para manter a casa'],[V,'Variáveis']].forEach(function(p){h+='<div><h3>'+p[1]+'</h3>';p[0].blocos.forEach(function(b){h+='<div class="rl-grupo"><div class="rl-tit"><span>'+esc(b.nome)+'</span><span>'+real(b.total)+'</span></div>';if(!b.itens.length)h+='<p class="sub">Nenhum gasto.</p>';b.itens.forEach(function(i){h+=rlItem(i,maior,false)});h+='</div>'});h+='</div>'});
+  [[E,'Essenciais para manter a casa'],[V,'Variáveis']].forEach(function(p){h+='<div><h3 class="rl-tocar" data-rllado="1" role="button" tabindex="0" title="Toque para selecionar todas">'+p[1]+'</h3>';p[0].blocos.forEach(function(b){h+='<div class="rl-grupo"><div class="rl-tit rl-tocar" data-rlgrp="1" role="button" tabindex="0" title="Toque para selecionar o grupo"><span>'+esc(b.nome)+'</span><span>'+real(b.total)+'</span></div>';if(!b.itens.length)h+='<p class="sub">Nenhum gasto.</p>';b.itens.forEach(function(i){h+=rlItem(i,maior,false)});h+='</div>'});h+='</div>'});
   h+='</div></section>';
 
   // Ranking
-  h+='<section><h2 class="rl-h2">Para onde foi o dinheiro</h2><p class="sub">Toque nas contas, aqui ou nos grupos acima, para ver a soma das selecionadas.</p><div class="rl-leg"><span><i class="rl-marca rl-f"></i>Fixo</span><span><i class="rl-marca rl-v"></i>Variável</span><span><i class="rl-marca rl-e"></i>Eventual</span></div>';
+  h+='<section><h2 class="rl-h2">Para onde foi o dinheiro</h2><p class="sub">Toque nas contas para ver a soma das selecionadas. Nos grupos acima, toque no nome do grupo para selecionar todas as contas dele.</p><div class="rl-leg"><span><i class="rl-marca rl-f"></i>Fixo</span><span><i class="rl-marca rl-v"></i>Variável</span><span><i class="rl-marca rl-e"></i>Eventual</span></div>';
   if(!gastos.length)h+='<p class="sub">Nenhum gasto neste mês.</p>';
   gastos.forEach(function(i){h+=rlItem(i,maior,true)});h+='</section>';
 
@@ -745,15 +747,20 @@ function rlSimular(saldo,gastos){
   $('rlTxV').textContent=rlRedVar+'%';$('rlTxE').textContent=rlRedEve+'%';$('rlSoma').hidden=!q;$('rlSomaQ').textContent=q+(q===1?' conta selecionada':' contas selecionadas');$('rlSomaT').textContent=real(mv);$('rlEco').textContent=real(eco);$('rlNS').textContent=real(ns);$('rlNS').className=rlCor(ns);
 }
 $('relatorio').onclick=function(ev){
-  var el=ev.target.closest('[data-rlid],[data-rlmes],[data-rlvoltar],[data-rllimpar],[data-rllimparsel]');if(!el)return;var d=el.dataset;
+  var el=ev.target.closest('[data-rlid],[data-rlmes],[data-rlvoltar],[data-rllimpar],[data-rllimparsel],[data-rlgrp],[data-rllado]');if(!el)return;var d=el.dataset;
   if(d.rllimparsel){rlCortes={};document.querySelectorAll('.rl-sel').forEach(function(e){e.classList.remove('rl-sel');e.setAttribute('aria-pressed','false')});rlSimular(rlTot(rlMes).saldo,base.itens.filter(function(i){return i.mes===rlMes&&i.tipo==='Despesa'}));return}
+  if(d.rlgrp||d.rllado){
+    var ids=[];el.parentElement.querySelectorAll('.rl-it[data-rlid]').forEach(function(e){if(ids.indexOf(e.dataset.rlid)<0)ids.push(e.dataset.rlid)});
+    if(!ids.length)return;var todos=ids.every(function(id){return rlCortes[id]});
+    ids.forEach(function(id){rlCortes[id]=!todos;document.querySelectorAll('.rl-it[data-rlid="'+id.replace(/"/g,'')+'"]').forEach(function(e){e.classList.toggle('rl-sel',!todos);e.setAttribute('aria-pressed',!todos)})});
+    rlSimular(rlTot(rlMes).saldo,base.itens.filter(function(i){return i.mes===rlMes&&i.tipo==='Despesa'}));return}
   if(d.rlvoltar)return fecharRelatorio();
   if(d.rlmes){rlMes=d.rlmes;rlCortes={};rlUsar=false;rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0);return}
   if(d.rllimpar){rlUsar=false;rlRedVar=0;rlRedEve=0;desenharRelatorio();return}
   if(d.rlid){rlCortes[d.rlid]=!rlCortes[d.rlid];var on=!!rlCortes[d.rlid];document.querySelectorAll('.rl-it[data-rlid="'+d.rlid.replace(/"/g,'')+'"]').forEach(function(e){e.classList.toggle('rl-sel',on);e.setAttribute('aria-pressed',on)});
     var g=base.itens.filter(function(i){return i.mes===rlMes&&i.tipo==='Despesa'});rlSimular(rlTot(rlMes).saldo,g)}
 };
-$('relatorio').onkeydown=function(ev){if((ev.key==='Enter'||ev.key===' ')&&ev.target.dataset&&ev.target.dataset.rlid){ev.preventDefault();ev.target.click()}};
+$('relatorio').onkeydown=function(ev){var dd=ev.target.dataset||{};if((ev.key==='Enter'||ev.key===' ')&&(dd.rlid||dd.rlgrp||dd.rllado)){ev.preventDefault();ev.target.click()}};
 
 function iniciarTela(){
   mesAtivo=mesAtivo||hoje().slice(0,7);
