@@ -118,7 +118,10 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 .rl-it:hover,.rl-it:focus-visible{background:var(--fundo)}.rl-it small{color:var(--suave)}
 .rl-val{text-align:right;white-space:nowrap;font-weight:500}
 .rl-tr{grid-column:1/-1;height:6px;background:var(--fundo);border-radius:3px}.rl-tr i{display:block;height:100%;border-radius:3px}
-.rl-corte .rl-nome,.rl-corte .rl-val{text-decoration:line-through;color:var(--suave)}.rl-corte .rl-tr i{opacity:.25}
+.rl-it.rl-sel{background:color-mix(in srgb,var(--fixo) 26%,transparent);box-shadow:inset 3px 0 0 var(--fixo)}.rl-sel .rl-nome::before{content:'✓ ';color:var(--fixo);font-weight:700}
+.rl-soma{position:fixed;left:16px;right:16px;bottom:16px;max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;background:var(--tinta);color:var(--papel);box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:5}
+.rl-soma span{flex:1;font-size:.9rem}.rl-soma b{font-size:1.15rem;white-space:nowrap}.rl-soma button{background:none;border:1px solid currentColor;border-radius:6px;padding:6px 10px;color:inherit}
+.rl-usar{display:flex;gap:8px;align-items:center;font-weight:500;margin:10px 0 0}.rl-usar input{width:18px;height:18px;padding:0}
 .rl-pend{font-size:.75rem;color:var(--variavel);font-weight:600;margin-left:6px}
 .rl-sim{display:grid;grid-template-columns:1fr;gap:4px;margin-top:10px}.rl-sim label{margin:6px 0 0;font-weight:500}.rl-sim input{padding:0}
 .rl-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(44px,1fr);gap:4px;overflow-x:auto;padding-top:6px}
@@ -133,11 +136,6 @@ input,select{width:100%;padding:12px;font:inherit;font-size:16px;border:1px soli
 .rl-tab .n{text-align:right;white-space:nowrap}
 .rl-dl{font-size:.9rem;margin:8px 0 0}.rl-dl dt{font-weight:600;margin-top:8px}.rl-dl dd{margin:2px 0 0;color:var(--suave)}
 #relatorio{padding-bottom:24px}
-.rl-somaTopo{display:flex;gap:18px;margin:6px 0;font-size:.88rem}
-.rl-fx{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--linha);font-weight:400;margin:0;cursor:pointer}
-.rl-fx input{width:20px;height:20px;padding:0;accent-color:var(--fixo)}.rl-fx b{white-space:nowrap}
-.rl-fx:has(input:not(:checked)) span,.rl-fx:has(input:not(:checked)) b{color:var(--suave);text-decoration:line-through}
-.rl-somaFim{display:flex;justify-content:space-between;gap:10px;padding-top:10px;font-weight:600}.rl-somaFim b{font-size:1.15rem;color:var(--fixo)}
 @media (min-width:860px){#relatorio{max-width:1000px}.rl-kpis{grid-template-columns:repeat(6,1fr)}.rl-kpi{border-top:0!important;border-left:1px solid var(--linha)}.rl-kpi:first-child{border-left:0}.rl-cartoes{grid-template-columns:repeat(3,1fr)}.rl-listas{grid-template-columns:1fr 1fr;gap:24px}.rl-sim{grid-template-columns:1fr 1fr;align-items:center}}
 [hidden]{display:none!important}
 </style>
@@ -617,8 +615,8 @@ var RL={
   // Contam sempre como gasto fixo, mesmo que tenham sido lançadas com outra natureza.
   sempreFixos:{blocos:['Moradia','Água, luz, gás e internet','Mercado'],palavras:['parcela carro','parcela do carro','prestacao carro','financiamento carro']}
 };
-var rlFixFora={};
-var emRelatorio=false,rlMes='',rlCortes={},rlRedVar=0,rlRedEve=0;
+
+var emRelatorio=false,rlMes='',rlCortes={},rlUsar=false,rlRedVar=0,rlRedEve=0;
 var MES_CURTO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 function mesCurto(m){return MES_CURTO[+m.slice(5,7)-1]+'/'+m.slice(2,4)}
 function rlN(t){return normalizar(t||'').replace(/\s+/g,' ').trim()}
@@ -650,7 +648,7 @@ function rlTot(m){
 function rlCor(v){return v<0?'neg':'rl-pos'}
 function rlNome(i){return esc(i.descricao)+(i.parcela&&i.parcela!=='Mensal'?' ('+esc(i.parcela)+')':'')}
 function rlItem(i,maior,comNat){
-  var c=rlCortes[i.id]?' rl-corte':'';
+  var c=rlCortes[i.id]?' rl-sel':'';
   return '<div class="rl-it'+c+'" data-rlid="'+esc(i.id)+'" tabindex="0" role="button" aria-pressed="'+(!!rlCortes[i.id])+'"><span class="rl-nome">'+rlNome(i)+(comNat?' <small>'+rlNat(i)+'</small>':'')+(i.pendente?'<span class="rl-pend">pendente</span>':'')+'</span><span class="rl-val">'+real(i.valor)+'</span><span class="rl-tr"><i class="'+rlClasse(i)+'" style="width:'+(i.valor/maior*100).toFixed(2)+'%"></i></span></div>';
 }
 function abrirRelatorio(){emRelatorio=true;rlMes=rlPadrao();rlCortes={};rlRedVar=0;rlRedEve=0;if(location.hash!=='#relatorio')history.pushState(null,'','#relatorio');desenhar();window.scrollTo(0,0);if(!fila.length)atualizar()}
@@ -673,18 +671,6 @@ function desenharRelatorio(){
   h+='<div class="rl-kpi"><span>Saldo do mês</span><b class="'+rlCor(t.saldo)+'">'+real(t.saldo)+'</b><small>Recorrente '+real(t.saldoRec)+'</small></div>';
   h+='<div class="rl-kpi"><span>Receita comprometida</span><b class="'+(t.comprometida>100?'neg':'')+'">'+rlPctTxt(t.comprometida)+'</b><small>Ainda a pagar '+real(t.aPagar)+'</small></div></div>';
 
-  // Contas fixas: lista para marcar e somar
-  var fixas=gastos.filter(function(i){return rlNat(i)==='Fixo'}).sort(porData);
-  var medias=rlMeses().filter(function(x){return x<m&&rlCompleto(x)}).slice(-3).map(function(x){return rlTot(x).Fixo});
-  h+='<section id="rlFixas"><h2 class="rl-h2">Contas fixas do mês</h2><p class="sub">Toque para marcar ou desmarcar e ver a soma.'+(medias.length?' Média dos '+(medias.length>1?medias.length+' meses completos anteriores':'mês completo anterior')+': <b>'+real(Math.round(medias.reduce(function(s,v){return s+v},0)/medias.length))+'</b>.':'')+'</p>';
-  if(!fixas.length)h+='<p class="sub">Nenhuma conta fixa neste mês.</p>';
-  else{
-    h+='<div class="rl-somaTopo"><button type="button" class="linkbtn" data-rlfix="todas">Marcar todas</button><button type="button" class="linkbtn" data-rlfix="nenhuma">Desmarcar todas</button></div>';
-    fixas.forEach(function(i){h+='<label class="rl-fx"><input type="checkbox" data-rlfixid="'+esc(i.id)+'"'+(rlFixFora[i.id]?'':' checked')+'><span>'+ddmm(i.data)+' '+rlNome(i)+(i.pendente?'<span class="rl-pend">pendente</span>':'')+'</span><b>'+real(i.valor)+'</b></label>'});
-    h+='<div class="rl-somaFim" aria-live="polite"><span id="rlFixQ"></span><b id="rlFixT"></b></div>';
-  }
-  h+='</section>';
-
   // Essenciais x variáveis
   var blocos={};RL.blocos.concat([{nome:RL.restante,lado:'Variáveis'}]).forEach(function(b){blocos[b.nome]={nome:b.nome,lado:b.lado,total:0,itens:[]}});
   gastos.forEach(function(i){var b=blocos[rlBloco(i)];b.total+=i.valor;b.itens.push(i)});
@@ -699,13 +685,13 @@ function desenharRelatorio(){
   h+='</div></section>';
 
   // Ranking
-  h+='<section><h2 class="rl-h2">Para onde foi o dinheiro</h2><p class="sub">Toque em um gasto para simular o corte. Nada é alterado nos seus dados.</p><div class="rl-leg"><span><i class="rl-marca rl-f"></i>Fixo</span><span><i class="rl-marca rl-v"></i>Variável</span><span><i class="rl-marca rl-e"></i>Eventual</span></div>';
+  h+='<section><h2 class="rl-h2">Para onde foi o dinheiro</h2><p class="sub">Toque nas contas, aqui ou nos grupos acima, para ver a soma das selecionadas.</p><div class="rl-leg"><span><i class="rl-marca rl-f"></i>Fixo</span><span><i class="rl-marca rl-v"></i>Variável</span><span><i class="rl-marca rl-e"></i>Eventual</span></div>';
   if(!gastos.length)h+='<p class="sub">Nenhum gasto neste mês.</p>';
   gastos.forEach(function(i){h+=rlItem(i,maior,true)});h+='</section>';
 
   // Simulador
-  h+='<section><h2 class="rl-h2">Simulador de corte</h2><p class="sub">Só simulação. Os percentuais valem para os gastos não marcados.</p><div class="rl-sim"><label for="rlVar">Reduzir gastos variáveis em <b id="rlTxV"></b></label><input id="rlVar" type="range" min="0" max="50" step="5" value="'+rlRedVar+'"><label for="rlEve">Reduzir gastos eventuais restantes em <b id="rlTxE"></b></label><input id="rlEve" type="range" min="0" max="100" step="5" value="'+rlRedEve+'"></div>';
-  h+='<div class="rl-cartoes" aria-live="polite"><div class="rl-cartao"><span>Gastos marcados</span><b id="rlQ"></b><span id="rlQV"></span></div><div class="rl-cartao"><span>Economia simulada</span><b id="rlEco"></b></div><div class="rl-cartao"><span>Novo saldo do mês</span><b id="rlNS"></b></div></div><button type="button" class="cancelar" data-rllimpar="1">Limpar simulação</button></section>';
+  h+='<section><h2 class="rl-h2">Simulador de corte</h2><p class="sub">Só simulação, nada é alterado nos seus dados.</p><label class="rl-usar"><input type="checkbox" id="rlUsar"'+(rlUsar?' checked':'')+'> Contar as contas selecionadas como corte</label><div class="rl-sim"><label for="rlVar">Reduzir gastos variáveis em <b id="rlTxV"></b></label><input id="rlVar" type="range" min="0" max="50" step="5" value="'+rlRedVar+'"><label for="rlEve">Reduzir gastos eventuais restantes em <b id="rlTxE"></b></label><input id="rlEve" type="range" min="0" max="100" step="5" value="'+rlRedEve+'"></div>';
+  h+='<div class="rl-cartoes" aria-live="polite"><div class="rl-cartao"><span>Economia simulada</span><b id="rlEco"></b></div><div class="rl-cartao"><span>Novo saldo do mês</span><b id="rlNS"></b></div></div><button type="button" class="cancelar" data-rllimpar="1">Limpar simulação</button></section>';
 
   // Mês a mês
   var hist=rlMeses().slice(-18).map(function(x){var o=rlTot(x);o.mes=x;return o}),esc3=Math.max.apply(null,hist.map(function(o){return Math.max(o.despesas,o.receita)}).concat([1]));
@@ -745,32 +731,26 @@ function desenharRelatorio(){
     '<dt>Parcelas em aberto</dt><dd>Despesas com parcela "n/N" ou "Mensal" que ainda têm parcelas pendentes, agrupadas pela compra.</dd>'+
     '<dt>Vencidas</dt><dd>Despesas pendentes com vencimento anterior a hoje.</dd></dl></details></section>';
 
+  h+='<div class="rl-soma" id="rlSoma" hidden><span id="rlSomaQ"></span><b id="rlSomaT"></b><button type="button" data-rllimparsel="1">Limpar</button></div>';
   $('relatorio').innerHTML=h;
-  $('rlSel').onchange=function(){rlMes=this.value;rlCortes={};rlFixFora={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0)};
+  $('rlSel').onchange=function(){rlMes=this.value;rlCortes={};rlUsar=false;rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0)};
   ['rlVar','rlEve'].forEach(function(id){$(id).oninput=function(){rlRedVar=+$('rlVar').value;rlRedEve=+$('rlEve').value;rlSimular(t.saldo,gastos)}});
+  $('rlUsar').onchange=function(){rlUsar=this.checked;rlSimular(t.saldo,gastos)};
   rlSimular(t.saldo,gastos);
-  rlSomarFixas();
-}
-function rlSomarFixas(){
-  var caixas=[].slice.call(document.querySelectorAll('[data-rlfixid]'));if(!caixas.length)return;
-  var mapa={};base.itens.forEach(function(i){mapa[i.id]=i});
-  var sel=caixas.filter(function(c){return c.checked}),tot=sel.reduce(function(s,c){return s+(mapa[c.dataset.rlfixid]?mapa[c.dataset.rlfixid].valor:0)},0);
-  $('rlFixQ').textContent=sel.length+' de '+caixas.length+' contas selecionadas';$('rlFixT').textContent=real(tot);
 }
 function rlSimular(saldo,gastos){
   var q=0,mv=0,eco=0;
-  gastos.forEach(function(i){if(rlCortes[i.id]){q++;mv+=i.valor;eco+=i.valor}else if(rlNat(i)==='Variável')eco+=i.valor*rlRedVar/100;else if(rlNat(i)==='Eventual')eco+=i.valor*rlRedEve/100});
+  gastos.forEach(function(i){if(rlCortes[i.id]){q++;mv+=i.valor;if(rlUsar){eco+=i.valor;return}}if(rlNat(i)==='Variável')eco+=i.valor*rlRedVar/100;else if(rlNat(i)==='Eventual')eco+=i.valor*rlRedEve/100});
   eco=Math.round(eco);var ns=saldo+eco;
-  $('rlTxV').textContent=rlRedVar+'%';$('rlTxE').textContent=rlRedEve+'%';$('rlQ').textContent=q;$('rlQV').textContent=real(mv);$('rlEco').textContent=real(eco);$('rlNS').textContent=real(ns);$('rlNS').className=rlCor(ns);
+  $('rlTxV').textContent=rlRedVar+'%';$('rlTxE').textContent=rlRedEve+'%';$('rlSoma').hidden=!q;$('rlSomaQ').textContent=q+(q===1?' conta selecionada':' contas selecionadas');$('rlSomaT').textContent=real(mv);$('rlEco').textContent=real(eco);$('rlNS').textContent=real(ns);$('rlNS').className=rlCor(ns);
 }
 $('relatorio').onclick=function(ev){
-  if(ev.target.dataset&&ev.target.dataset.rlfixid){rlFixFora[ev.target.dataset.rlfixid]=!ev.target.checked;rlSomarFixas();return}
-  var el=ev.target.closest('[data-rlid],[data-rlmes],[data-rlvoltar],[data-rllimpar],[data-rlfix]');if(!el)return;var d=el.dataset;
-  if(d.rlfix){var on=d.rlfix==='todas';document.querySelectorAll('[data-rlfixid]').forEach(function(c){c.checked=on;rlFixFora[c.dataset.rlfixid]=!on});rlSomarFixas();return}
+  var el=ev.target.closest('[data-rlid],[data-rlmes],[data-rlvoltar],[data-rllimpar],[data-rllimparsel]');if(!el)return;var d=el.dataset;
+  if(d.rllimparsel){rlCortes={};document.querySelectorAll('.rl-sel').forEach(function(e){e.classList.remove('rl-sel');e.setAttribute('aria-pressed','false')});rlSimular(rlTot(rlMes).saldo,base.itens.filter(function(i){return i.mes===rlMes&&i.tipo==='Despesa'}));return}
   if(d.rlvoltar)return fecharRelatorio();
-  if(d.rlmes){rlMes=d.rlmes;rlCortes={};rlFixFora={};rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0);return}
-  if(d.rllimpar){rlCortes={};rlRedVar=0;rlRedEve=0;desenharRelatorio();return}
-  if(d.rlid){rlCortes[d.rlid]=!rlCortes[d.rlid];var on=!!rlCortes[d.rlid];document.querySelectorAll('.rl-it[data-rlid="'+d.rlid.replace(/"/g,'')+'"]').forEach(function(e){e.classList.toggle('rl-corte',on);e.setAttribute('aria-pressed',on)});
+  if(d.rlmes){rlMes=d.rlmes;rlCortes={};rlUsar=false;rlRedVar=0;rlRedEve=0;desenharRelatorio();window.scrollTo(0,0);return}
+  if(d.rllimpar){rlUsar=false;rlRedVar=0;rlRedEve=0;desenharRelatorio();return}
+  if(d.rlid){rlCortes[d.rlid]=!rlCortes[d.rlid];var on=!!rlCortes[d.rlid];document.querySelectorAll('.rl-it[data-rlid="'+d.rlid.replace(/"/g,'')+'"]').forEach(function(e){e.classList.toggle('rl-sel',on);e.setAttribute('aria-pressed',on)});
     var g=base.itens.filter(function(i){return i.mes===rlMes&&i.tipo==='Despesa'});rlSimular(rlTot(rlMes).saldo,g)}
 };
 $('relatorio').onkeydown=function(ev){if((ev.key==='Enter'||ev.key===' ')&&ev.target.dataset&&ev.target.dataset.rlid){ev.preventDefault();ev.target.click()}};
